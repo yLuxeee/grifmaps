@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Play Diagrammer</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        font-family: "Inter", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont,
+          sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: radial-gradient(circle at top left, #edf2f7, #c3dafe);
+        padding: clamp(16px, 3vw, 32px);
+      }
+
+      .app {
+        width: min(98vw, 1120px);
+        display: grid;
+        gap: 16px;
+      }
+
+      .toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 16px;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.85);
+        box-shadow: 0 20px 45px rgba(15, 23, 42, 0.2);
+        backdrop-filter: blur(6px);
+      }
+
+      .toolbar h1 {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin: 0 16px 0 0;
+      }
+
+      .toolbar button,
+      .toolbar label {
+        font-size: 0.95rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .toolbar button {
+        padding: 8px 14px;
+        border-radius: 999px;
+        border: none;
+        background: #e2e8f0;
+        color: #0f172a;
+        cursor: pointer;
+        transition: background 0.2s ease;
+        font-weight: 600;
+      }
+
+      .toolbar button[data-mode].active {
+        background: #2563eb;
+        color: #f8fafc;
+      }
+
+      .toolbar button:hover {
+        background: #cbd5f5;
+      }
+
+      .toolbar input[type="color"] {
+        width: 44px;
+        height: 30px;
+        border-radius: 8px;
+        border: 1px solid #94a3b8;
+        padding: 0;
+        background: none;
+        cursor: pointer;
+      }
+
+      .toolbar input[type="range"] {
+        accent-color: #2563eb;
+      }
+
+      .field-wrapper {
+        display: flex;
+        justify-content: center;
+      }
+
+      .field {
+        position: relative;
+        --field-width: min(96vw, 1152px);
+        width: var(--field-width);
+        height: min(calc(var(--field-width) / 1.12), 820px);
+        border-radius: 28px;
+        border: 10px solid rgba(15, 23, 42, 0.85);
+        background-color: #d4d4d8;
+        background-image:
+          linear-gradient(90deg, rgba(107, 114, 128, 0.25) 0, rgba(107, 114, 128, 0.25) 1px, transparent 1px,
+            transparent 72px),
+          linear-gradient(180deg, rgba(107, 114, 128, 0.25) 0, rgba(107, 114, 128, 0.25) 1px, transparent 1px,
+            transparent 72px);
+        background-size: 72px 72px;
+        box-shadow: 0 30px 60px rgba(15, 23, 42, 0.35);
+        overflow: hidden;
+      }
+
+      .field canvas,
+      .connector-layer,
+      .goal-point,
+      .marker {
+        position: absolute;
+      }
+
+      .connector-layer {
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+      }
+
+      .connector-layer line {
+        stroke-width: 1.6;
+        stroke-linecap: round;
+        opacity: 0.75;
+      }
+
+      #drawingCanvas {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        display: block;
+        touch-action: none;
+      }
+
+      .marker {
+        position: absolute;
+        width: clamp(40px, 7vmin, 64px);
+        aspect-ratio: 1 / 1;
+        border-radius: 50%;
+        transform: translate(-50%, -50%);
+        box-shadow: 0 10px 18px rgba(15, 23, 42, 0.35);
+        display: grid;
+        place-items: center;
+        color: #f8fafc;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        user-select: none;
+        transition: transform 0.2s ease;
+      }
+
+      .marker::after {
+        content: attr(data-label);
+      }
+
+      .marker.red {
+        background: radial-gradient(circle at 30% 30%, #ff9b9b, #b91c1c 65%);
+      }
+
+      .marker.blue {
+        background: radial-gradient(circle at 30% 30%, #93c5fd, #1d4ed8 65%);
+      }
+
+      .marker.highlight {
+        background: radial-gradient(circle at 30% 30%, #fef08a, #facc15 70%);
+        color: #92400e;
+      }
+
+      .field.moving .marker:active {
+        transform: translate(-50%, -50%) scale(1.05);
+      }
+
+      .field.drawing-mode .marker {
+        pointer-events: none;
+        opacity: 0.85;
+      }
+
+      .goal-point {
+        position: absolute;
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        transform: translate(-50%, -50%);
+        pointer-events: none;
+        opacity: 0.4;
+        box-shadow: 0 0 6px rgba(15, 23, 42, 0.45);
+      }
+
+      .goal-point.red {
+        background: #b91c1c;
+      }
+
+      .goal-point.blue {
+        background: #1d4ed8;
+      }
+
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
+
+      @media (max-width: 640px) {
+        .toolbar {
+          gap: 10px;
+        }
+
+        .toolbar h1 {
+          flex-basis: 100%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="app" aria-labelledby="appTitle">
+      <div class="toolbar" role="group" aria-label="Drawing controls">
+        <h1 id="appTitle">Play Diagrammer</h1>
+        <button type="button" data-mode="move" class="active">Move Pieces</button>
+        <button type="button" data-mode="draw">Draw Routes</button>
+        <label>
+          <span class="sr-only">Brush color</span>
+          <input type="color" id="colorPicker" value="#ef4444" aria-label="Brush color" />
+        </label>
+        <label for="brushSize">Brush size</label>
+        <input
+          type="range"
+          id="brushSize"
+          min="2"
+          max="24"
+          value="8"
+          aria-label="Brush size"
+        />
+        <button type="button" id="clearCanvas">Clear Drawing</button>
+      </div>
+      <div class="field-wrapper">
+        <section
+          class="field moving"
+          id="field"
+          aria-label="Interactive field with draggable markers and drawing canvas"
+        >
+          <canvas id="drawingCanvas" aria-hidden="true"></canvas>
+          <svg
+            class="connector-layer"
+            viewBox="0 0 100 100"
+            preserveAspectRatio="none"
+            aria-hidden="true"
+          ></svg>
+          <div
+            class="goal-point red"
+            data-goal="red"
+            data-x="10"
+            data-y="50"
+            style="left: 10%; top: 50%;"
+            aria-hidden="true"
+          ></div>
+          <div
+            class="goal-point blue"
+            data-goal="blue"
+            data-x="90"
+            data-y="50"
+            style="left: 90%; top: 50%;"
+            aria-hidden="true"
+          ></div>
+          <div class="marker red" data-label="R1" data-x="18" data-y="22" role="button"></div>
+          <div class="marker red" data-label="R2" data-x="32" data-y="68" role="button"></div>
+          <div class="marker red" data-label="R3" data-x="50" data-y="32" role="button"></div>
+          <div class="marker red" data-label="R4" data-x="70" data-y="78" role="button"></div>
+          <div class="marker blue" data-label="B1" data-x="82" data-y="26" role="button"></div>
+          <div class="marker blue" data-label="B2" data-x="24" data-y="48" role="button"></div>
+          <div class="marker blue" data-label="B3" data-x="54" data-y="60" role="button"></div>
+          <div class="marker blue" data-label="B4" data-x="40" data-y="84" role="button"></div>
+        </section>
+      </div>
+    </main>
+    <script>
+      const field = document.getElementById("field");
+      const canvas = document.getElementById("drawingCanvas");
+      const colorPicker = document.getElementById("colorPicker");
+      const brushSizeControl = document.getElementById("brushSize");
+      const clearButton = document.getElementById("clearCanvas");
+      const modeButtons = document.querySelectorAll("[data-mode]");
+      const markers = Array.from(document.querySelectorAll(".marker"));
+      const connectorLayer = field.querySelector(".connector-layer");
+      const markerConnections = new Map();
+      const ctx = canvas.getContext("2d");
+      const goalTargets = {
+        red: field.querySelector('[data-goal="red"]'),
+        blue: field.querySelector('[data-goal="blue"]'),
+      };
+
+      let mode = "move";
+      let activeMarker = null;
+      let activePointerId = null;
+      let pointerOffset = { x: 0, y: 0 };
+      let isDrawing = false;
+      let lastPoint = null;
+
+      function clamp(value, min, max) {
+        return Math.min(Math.max(value, min), max);
+      }
+
+      function resizeCanvas() {
+        const rect = field.getBoundingClientRect();
+        const prev = document.createElement("canvas");
+        prev.width = canvas.width;
+        prev.height = canvas.height;
+        prev.getContext("2d").drawImage(canvas, 0, 0);
+
+        canvas.width = Math.round(rect.width);
+        canvas.height = Math.round(rect.height);
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(prev, 0, 0, prev.width, prev.height, 0, 0, canvas.width, canvas.height);
+      }
+
+      function positionMarker(marker, xPercent, yPercent) {
+        marker.style.left = `${xPercent}%`;
+        marker.style.top = `${yPercent}%`;
+        marker.dataset.x = xPercent.toFixed(2);
+        marker.dataset.y = yPercent.toFixed(2);
+        updateConnector(marker);
+      }
+
+      function refreshMarkerPositions() {
+        markers.forEach((marker) => {
+          const x = parseFloat(marker.dataset.x);
+          const y = parseFloat(marker.dataset.y);
+          positionMarker(marker, x, y);
+        });
+      }
+
+      function getMarkerGoalKey(marker) {
+        if (marker.classList.contains("red")) return "red";
+        if (marker.classList.contains("blue")) return "blue";
+        return null;
+      }
+
+      function createConnector(marker) {
+        if (!connectorLayer || markerConnections.has(marker)) return;
+        const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        const strokeColor = marker.classList.contains("red") ? "#ef4444" : "#3b82f6";
+        line.setAttribute("stroke", strokeColor);
+        connectorLayer.appendChild(line);
+        markerConnections.set(marker, line);
+        updateConnector(marker);
+      }
+
+      function removeConnector(marker) {
+        const line = markerConnections.get(marker);
+        if (!line) return;
+        line.remove();
+        markerConnections.delete(marker);
+      }
+
+      function updateConnector(marker) {
+        if (!connectorLayer || !markerConnections.has(marker)) return;
+        const line = markerConnections.get(marker);
+        const goalKey = getMarkerGoalKey(marker);
+        const goalPoint = goalKey ? goalTargets[goalKey] : null;
+        if (!line || !goalPoint) return;
+        const markerX = parseFloat(marker.dataset.x);
+        const markerY = parseFloat(marker.dataset.y);
+        const goalX = parseFloat(goalPoint.dataset.x);
+        const goalY = parseFloat(goalPoint.dataset.y);
+        line.setAttribute("x1", markerX);
+        line.setAttribute("y1", markerY);
+        line.setAttribute("x2", goalX);
+        line.setAttribute("y2", goalY);
+      }
+
+      function refreshConnectorPositions() {
+        markers.forEach(updateConnector);
+      }
+
+      function setMode(newMode) {
+        mode = newMode;
+        modeButtons.forEach((button) => {
+          const isActive = button.dataset.mode === newMode;
+          button.classList.toggle("active", isActive);
+        });
+        field.classList.toggle("drawing-mode", newMode === "draw");
+        field.classList.toggle("moving", newMode === "move");
+        markers.forEach((marker) => {
+          marker.style.pointerEvents = newMode === "draw" ? "none" : "auto";
+        });
+      }
+
+      function pointerPercentages(event, rect) {
+        return {
+          x: ((event.clientX - rect.left) / rect.width) * 100,
+          y: ((event.clientY - rect.top) / rect.height) * 100,
+        };
+      }
+
+      function onMarkerPointerDown(event) {
+        if (event.button === 1) {
+          event.preventDefault();
+          const marker = event.currentTarget;
+          const shouldHighlight = !marker.classList.contains("highlight");
+          marker.classList.toggle("highlight", shouldHighlight);
+          if (shouldHighlight) {
+            createConnector(marker);
+          } else {
+            removeConnector(marker);
+          }
+          updateConnector(marker);
+          return;
+        }
+
+        if (mode !== "move") return;
+
+        event.preventDefault();
+        activeMarker = event.currentTarget;
+        activePointerId = event.pointerId;
+        const rect = field.getBoundingClientRect();
+        const pointerPercents = pointerPercentages(event, rect);
+        const markerX = parseFloat(activeMarker.dataset.x);
+        const markerY = parseFloat(activeMarker.dataset.y);
+
+        pointerOffset = {
+          x: pointerPercents.x - markerX,
+          y: pointerPercents.y - markerY,
+        };
+
+        activeMarker.setPointerCapture(activePointerId);
+      }
+
+      function onMarkerPointerMove(event) {
+        if (!activeMarker || event.pointerId !== activePointerId) return;
+
+        const rect = field.getBoundingClientRect();
+        const { x, y } = pointerPercentages(event, rect);
+        const markerWidthPercent = ((activeMarker.offsetWidth / 2) / rect.width) * 100;
+        const markerHeightPercent = ((activeMarker.offsetHeight / 2) / rect.height) * 100;
+
+        const targetX = clamp(x - pointerOffset.x, markerWidthPercent, 100 - markerWidthPercent);
+        const targetY = clamp(y - pointerOffset.y, markerHeightPercent, 100 - markerHeightPercent);
+
+        positionMarker(activeMarker, targetX, targetY);
+      }
+
+      function endMarkerDrag(event) {
+        if (event.pointerId !== activePointerId) return;
+        activeMarker?.releasePointerCapture(activePointerId);
+        activeMarker = null;
+        activePointerId = null;
+      }
+
+      function startDrawing(event) {
+        if (mode !== "draw") return;
+        event.preventDefault();
+        isDrawing = true;
+        lastPoint = getCanvasCoordinates(event);
+      }
+
+      function draw(event) {
+        if (!isDrawing) return;
+        const point = getCanvasCoordinates(event);
+        ctx.strokeStyle = colorPicker.value;
+        ctx.lineWidth = parseFloat(brushSizeControl.value);
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+        ctx.beginPath();
+        ctx.moveTo(lastPoint.x, lastPoint.y);
+        ctx.lineTo(point.x, point.y);
+        ctx.stroke();
+        lastPoint = point;
+      }
+
+      function stopDrawing() {
+        isDrawing = false;
+      }
+
+      function getCanvasCoordinates(event) {
+        const rect = field.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        return {
+          x: (event.clientX - rect.left) * scaleX,
+          y: (event.clientY - rect.top) * scaleY,
+        };
+      }
+
+      function clearCanvas() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
+
+      // Event listeners
+      markers.forEach((marker) => {
+        marker.addEventListener("pointerdown", onMarkerPointerDown);
+        marker.addEventListener("pointermove", onMarkerPointerMove);
+        marker.addEventListener("pointerup", endMarkerDrag);
+        marker.addEventListener("pointercancel", endMarkerDrag);
+      });
+
+      field.addEventListener("pointerdown", (event) => {
+        if (mode === "draw") {
+          startDrawing(event);
+        }
+      });
+
+      field.addEventListener("pointermove", draw);
+      window.addEventListener("pointerup", stopDrawing);
+      window.addEventListener("pointercancel", stopDrawing);
+
+      modeButtons.forEach((button) => {
+        button.addEventListener("click", () => setMode(button.dataset.mode));
+      });
+
+      clearButton.addEventListener("click", clearCanvas);
+
+      window.addEventListener("resize", () => {
+        resizeCanvas();
+        refreshMarkerPositions();
+        refreshConnectorPositions();
+      });
+
+      resizeCanvas();
+      refreshMarkerPositions();
+      refreshConnectorPositions();
+    </script>
+  </body>
+</html>
