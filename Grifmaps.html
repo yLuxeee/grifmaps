@@ -69,8 +69,7 @@
         font-weight: 600;
       }
 
-      .toolbar button[data-mode].active,
-      .toolbar button[data-arrow].active {
+      .toolbar button[data-mode].active {
         background: #2563eb;
         color: #f8fafc;
       }
@@ -119,10 +118,20 @@
 
         /* Default grid */
         background-image:
-          linear-gradient(90deg, rgba(107, 114, 128, 0.25) 0, rgba(107, 114, 128, 0.25) 1px, transparent 1px,
-            transparent 72px),
-          linear-gradient(180deg, rgba(107, 114, 128, 0.25) 0, rgba(107, 114, 128, 0.25) 1px, transparent 1px,
-            transparent 72px);
+          linear-gradient(
+            90deg,
+            rgba(107, 114, 128, 0.25) 0,
+            rgba(107, 114, 128, 0.25) 1px,
+            transparent 1px,
+            transparent 72px
+          ),
+          linear-gradient(
+            180deg,
+            rgba(107, 114, 128, 0.25) 0,
+            rgba(107, 114, 128, 0.25) 1px,
+            transparent 1px,
+            transparent 72px
+          );
         background-size: 72px 72px;
 
         box-shadow: 0 30px 60px rgba(15, 23, 42, 0.35);
@@ -130,7 +139,6 @@
       }
 
       .field.canvas-bg {
-        /* when background preset is an image */
         background-size: cover;
         background-position: center;
         background-repeat: no-repeat;
@@ -140,7 +148,8 @@
       .connector-layer,
       .goal-point,
       .marker,
-      .arrow {
+      .arrow,
+      .mini-dot {
         position: absolute;
       }
 
@@ -158,7 +167,6 @@
       }
 
       #drawingCanvas {
-        position: absolute;
         inset: 0;
         width: 100%;
         height: 100%;
@@ -167,7 +175,6 @@
       }
 
       .marker {
-        position: absolute;
         width: clamp(40px, 7vmin, 64px);
         aspect-ratio: 1 / 1;
         border-radius: 50%;
@@ -200,19 +207,21 @@
       }
 
       .field.moving .marker:active,
+      .field.moving .mini-dot:active,
       .field.moving .arrow:active {
-        transform: translate(-50%, -50%) scale(1.05) rotate(var(--rot, 0deg));
+        transform: translate(-50%, -50%) scale(1.05);
       }
 
       .field.drawing-mode .marker,
+      .field.drawing-mode .mini-dot,
       .field.drawing-mode .arrow,
-      .field.arrow-mode .marker {
+      .field.arrow-mode .marker,
+      .field.arrow-mode .mini-dot {
         pointer-events: none;
         opacity: 0.85;
       }
 
       .goal-point {
-        position: absolute;
         width: 6px;
         height: 6px;
         border-radius: 50%;
@@ -234,7 +243,7 @@
       .arrow {
         width: clamp(64px, 10vmin, 110px);
         height: clamp(26px, 4.5vmin, 44px);
-        transform: translate(-50%, -50%) rotate(var(--rot, 0deg));
+        transform: translate(-50%, -50%);
         transform-origin: center;
         filter: drop-shadow(0 8px 14px rgba(15, 23, 42, 0.28));
         user-select: none;
@@ -260,7 +269,22 @@
         fill: var(--arrow-color, #ef4444);
       }
 
-      /* tiny hint text */
+      .mini-dot {
+        width: clamp(16px, 3vmin, 24px);
+        aspect-ratio: 1 / 1;
+        border-radius: 50%;
+        transform: translate(-50%, -50%);
+        background: radial-gradient(circle at 30% 30%, #f8fafc, #0f172a 70%);
+        box-shadow: 0 6px 12px rgba(15, 23, 42, 0.35);
+        cursor: pointer;
+        user-select: none;
+        touch-action: none;
+      }
+
+      .mini-dot.is-hidden {
+        display: none;
+      }
+
       .hint {
         margin-left: auto;
         font-size: 0.85rem;
@@ -322,13 +346,11 @@
           <option value="chalk">Chalkboard</option>
         </select>
 
-        <button type="button" data-arrow="straight" class="active">Straight Arrow</button>
-        <button type="button" data-arrow="curve">Curved Arrow</button>
-        <button type="button" data-arrow="block">Block Arrow</button>
+        <button type="button" id="toggleCenterDot" aria-pressed="true">Toggle Center Dot</button>
 
         <button type="button" id="clearCanvas">Clear Drawing</button>
 
-        <span class="hint">Tip: Right-click a marker to toggle its goal line. Shift+Wheel rotates arrows.</span>
+        <span class="hint">Tip: Right-click a marker to toggle its goal line.</span>
       </div>
 
       <div class="field-wrapper">
@@ -344,10 +366,13 @@
           <div class="marker red" data-label="R2" data-x="32" data-y="68" role="button"></div>
           <div class="marker red" data-label="R3" data-x="50" data-y="32" role="button"></div>
           <div class="marker red" data-label="R4" data-x="70" data-y="78" role="button"></div>
+
           <div class="marker blue" data-label="B1" data-x="82" data-y="26" role="button"></div>
           <div class="marker blue" data-label="B2" data-x="24" data-y="48" role="button"></div>
           <div class="marker blue" data-label="B3" data-x="54" data-y="60" role="button"></div>
           <div class="marker blue" data-label="B4" data-x="40" data-y="84" role="button"></div>
+
+          <div class="mini-dot" id="centerDot" data-x="50" data-y="50" role="button" aria-label="Center dot"></div>
         </section>
       </div>
     </main>
@@ -358,11 +383,12 @@
       const colorPicker = document.getElementById("colorPicker");
       const brushSizeControl = document.getElementById("brushSize");
       const clearButton = document.getElementById("clearCanvas");
+      const toggleCenterDotButton = document.getElementById("toggleCenterDot");
       const modeButtons = document.querySelectorAll("[data-mode]");
-      const arrowButtons = document.querySelectorAll("[data-arrow]");
       const backgroundSelect = document.getElementById("backgroundSelect");
 
       const markers = Array.from(document.querySelectorAll(".marker"));
+      const centerDot = document.getElementById("centerDot");
       const connectorLayer = field.querySelector(".connector-layer");
       const markerConnections = new Map();
       const ctx = canvas.getContext("2d");
@@ -375,12 +401,13 @@
       let mode = "move";
       let activeMarker = null;
       let activeArrow = null;
+      let activeCenterDot = null;
       let activePointerId = null;
       let pointerOffset = { x: 0, y: 0 };
       let isDrawing = false;
       let lastPoint = null;
 
-      let arrowPreset = "straight"; // straight | curve | block
+      let arrowPreset = "straight";
 
       function clamp(value, min, max) {
         return Math.min(Math.max(value, min), max);
@@ -423,6 +450,21 @@
         });
       }
 
+      function positionCenterDot(xPercent, yPercent) {
+        if (!centerDot) return;
+        centerDot.style.left = `${xPercent}%`;
+        centerDot.style.top = `${yPercent}%`;
+        centerDot.dataset.x = xPercent.toFixed(2);
+        centerDot.dataset.y = yPercent.toFixed(2);
+      }
+
+      function refreshCenterDotPosition() {
+        if (!centerDot) return;
+        const x = parseFloat(centerDot.dataset.x);
+        const y = parseFloat(centerDot.dataset.y);
+        positionCenterDot(x, y);
+      }
+
       function getMarkerGoalKey(marker) {
         if (marker.classList.contains("red")) return "red";
         if (marker.classList.contains("blue")) return "blue";
@@ -452,10 +494,12 @@
         const goalKey = getMarkerGoalKey(marker);
         const goalPoint = goalKey ? goalTargets[goalKey] : null;
         if (!line || !goalPoint) return;
+
         const markerX = parseFloat(marker.dataset.x);
         const markerY = parseFloat(marker.dataset.y);
         const goalX = parseFloat(goalPoint.dataset.x);
         const goalY = parseFloat(goalPoint.dataset.y);
+
         line.setAttribute("x1", markerX);
         line.setAttribute("y1", markerY);
         line.setAttribute("x2", goalX);
@@ -483,6 +527,10 @@
           marker.style.pointerEvents = newMode === "move" ? "auto" : "none";
         });
 
+        if (centerDot) {
+          centerDot.style.pointerEvents = newMode === "move" ? "auto" : "none";
+        }
+
         // Arrows should only be draggable in move mode
         Array.from(field.querySelectorAll(".arrow")).forEach((arrow) => {
           arrow.style.pointerEvents = newMode === "move" ? "auto" : "none";
@@ -491,7 +539,7 @@
       }
 
       function onMarkerPointerDown(event) {
-        // RIGHT CLICK toggles goal connector now
+        // Right click toggles connector
         if (event.button === 2) {
           event.preventDefault();
           const marker = event.currentTarget;
@@ -543,6 +591,47 @@
         activePointerId = null;
       }
 
+      function onCenterDotPointerDown(event) {
+        if (mode !== "move") return;
+        event.preventDefault();
+
+        activeCenterDot = event.currentTarget;
+        activePointerId = event.pointerId;
+
+        const rect = field.getBoundingClientRect();
+        const pointerPercents = pointerPercentages(event, rect);
+        const dotX = parseFloat(activeCenterDot.dataset.x);
+        const dotY = parseFloat(activeCenterDot.dataset.y);
+
+        pointerOffset = {
+          x: pointerPercents.x - dotX,
+          y: pointerPercents.y - dotY,
+        };
+
+        activeCenterDot.setPointerCapture(activePointerId);
+      }
+
+      function onCenterDotPointerMove(event) {
+        if (!activeCenterDot || event.pointerId !== activePointerId) return;
+
+        const rect = field.getBoundingClientRect();
+        const { x, y } = pointerPercentages(event, rect);
+        const halfW = ((activeCenterDot.offsetWidth / 2) / rect.width) * 100;
+        const halfH = ((activeCenterDot.offsetHeight / 2) / rect.height) * 100;
+
+        const targetX = clamp(x - pointerOffset.x, halfW, 100 - halfW);
+        const targetY = clamp(y - pointerOffset.y, halfH, 100 - halfH);
+
+        positionCenterDot(targetX, targetY);
+      }
+
+      function endCenterDotDrag(event) {
+        if (event.pointerId !== activePointerId) return;
+        activeCenterDot?.releasePointerCapture(activePointerId);
+        activeCenterDot = null;
+        activePointerId = null;
+      }
+
       function startDrawing(event) {
         if (mode !== "draw") return;
         event.preventDefault();
@@ -553,14 +642,17 @@
       function draw(event) {
         if (!isDrawing) return;
         const point = getCanvasCoordinates(event);
+
         ctx.strokeStyle = colorPicker.value;
         ctx.lineWidth = parseFloat(brushSizeControl.value);
         ctx.lineCap = "round";
         ctx.lineJoin = "round";
+
         ctx.beginPath();
         ctx.moveTo(lastPoint.x, lastPoint.y);
         ctx.lineTo(point.x, point.y);
         ctx.stroke();
+
         lastPoint = point;
       }
 
@@ -582,7 +674,7 @@
         ctx.clearRect(0, 0, canvas.width, canvas.height);
       }
 
-      // ---- Background presets (no external dependencies; all inline SVG data URLs) ----
+      // ---- Background presets (inline SVG data URLs) ----
       const bgPresets = {
         grid: null,
         football: svgDataUrl(`
@@ -688,69 +780,33 @@
       }
 
       // ---- Arrow placement ----
-      function setArrowPreset(preset) {
-        arrowPreset = preset;
-        arrowButtons.forEach((btn) => btn.classList.toggle("active", btn.dataset.arrow === preset));
-      }
-
       function createArrowElement(preset, xPercent, yPercent, color) {
         const el = document.createElement("div");
         el.className = "arrow";
         el.dataset.x = xPercent.toFixed(2);
         el.dataset.y = yPercent.toFixed(2);
-        el.dataset.rot = "0";
         el.dataset.preset = preset;
         el.style.left = `${xPercent}%`;
         el.style.top = `${yPercent}%`;
         el.style.setProperty("--arrow-color", color);
-        el.style.setProperty("--rot", "0deg");
 
-        // SVG templates
         const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
         svg.setAttribute("viewBox", "0 0 120 48");
         svg.setAttribute("aria-hidden", "true");
 
-        if (preset === "straight") {
-          svg.innerHTML = `
-            <path class="stroke" d="M10 24 H86"/>
-            <path class="fill" d="M86 10 L114 24 L86 38 Z"/>
-          `;
-        } else if (preset === "curve") {
-          svg.innerHTML = `
-            <path class="stroke" d="M12 34 C 36 8, 66 8, 88 22" />
-            <path class="fill" d="M86 10 L114 24 L86 38 Z"/>
-          `;
-        } else if (preset === "block") {
-          svg.innerHTML = `
-            <path class="stroke" d="M12 24 H64"/>
-            <path class="fill" d="M64 12 H92 V6 L114 24 L92 42 V36 H64 Z"/>
-          `;
-        }
+        svg.innerHTML = `
+          <path class="stroke" d="M10 24 H86" />
+          <path class="fill" d="M86 10 L114 24 L86 38 Z" />
+        `;
 
         el.appendChild(svg);
 
-        // Drag in move mode
         el.addEventListener("pointerdown", onArrowPointerDown);
         el.addEventListener("pointermove", onArrowPointerMove);
         el.addEventListener("pointerup", endArrowDrag);
         el.addEventListener("pointercancel", endArrowDrag);
 
-        // Rotate with Shift+Wheel (works in move mode)
-        el.addEventListener("wheel", (e) => {
-          if (!e.shiftKey) return;
-          e.preventDefault();
-          const current = parseFloat(el.dataset.rot || "0");
-          const delta = e.deltaY > 0 ? 8 : -8;
-          const next = (current + delta) % 360;
-          setArrowRotation(el, next);
-        }, { passive: false });
-
         return el;
-      }
-
-      function setArrowRotation(el, degrees) {
-        el.dataset.rot = String(degrees);
-        el.style.setProperty("--rot", `${degrees}deg`);
       }
 
       function positionArrow(el, xPercent, yPercent) {
@@ -801,10 +857,8 @@
         activePointerId = null;
       }
 
-      // Place arrow on click in arrow mode
       function placeArrowAt(event) {
         if (mode !== "arrow") return;
-        // only left click places
         if (event.button !== 0) return;
 
         event.preventDefault();
@@ -812,24 +866,18 @@
         const { x, y } = pointerPercentages(event, rect);
 
         const arrow = createArrowElement(arrowPreset, x, y, colorPicker.value);
-        // clamp to stay within bounds
         field.appendChild(arrow);
 
-        // after append, clamp based on real size
+        // clamp based on real size after append
         const halfW = ((arrow.offsetWidth / 2) / rect.width) * 100;
         const halfH = ((arrow.offsetHeight / 2) / rect.height) * 100;
-        positionArrow(
-          arrow,
-          clamp(x, halfW, 100 - halfW),
-          clamp(y, halfH, 100 - halfH)
-        );
+        positionArrow(arrow, clamp(x, halfW, 100 - halfW), clamp(y, halfH, 100 - halfH));
 
-        // pointer events depend on current mode
+        // in arrow mode, arrows should not be draggable
         arrow.style.pointerEvents = "none";
       }
 
       // ---- Event listeners ----
-      // Prevent the browser context menu on the field (so right-click can be used)
       field.addEventListener("contextmenu", (e) => e.preventDefault());
 
       markers.forEach((marker) => {
@@ -839,6 +887,13 @@
         marker.addEventListener("pointerup", endMarkerDrag);
         marker.addEventListener("pointercancel", endMarkerDrag);
       });
+
+      if (centerDot) {
+        centerDot.addEventListener("pointerdown", onCenterDotPointerDown);
+        centerDot.addEventListener("pointermove", onCenterDotPointerMove);
+        centerDot.addEventListener("pointerup", endCenterDotDrag);
+        centerDot.addEventListener("pointercancel", endCenterDotDrag);
+      }
 
       field.addEventListener("pointerdown", (event) => {
         if (mode === "draw") startDrawing(event);
@@ -853,22 +908,24 @@
         button.addEventListener("click", () => setMode(button.dataset.mode));
       });
 
-      arrowButtons.forEach((button) => {
-        button.addEventListener("click", () => setArrowPreset(button.dataset.arrow));
-      });
-
       backgroundSelect.addEventListener("change", () => {
         applyBackgroundPreset(backgroundSelect.value);
       });
 
       clearButton.addEventListener("click", clearCanvas);
 
+      toggleCenterDotButton.addEventListener("click", () => {
+        if (!centerDot) return;
+        const isHidden = centerDot.classList.toggle("is-hidden");
+        toggleCenterDotButton.setAttribute("aria-pressed", String(!isHidden));
+      });
+
       window.addEventListener("resize", () => {
         resizeCanvas();
         refreshMarkerPositions();
+        refreshCenterDotPosition();
         refreshConnectorPositions();
 
-        // refresh arrow pixel placement based on stored percents
         const rect = field.getBoundingClientRect();
         Array.from(field.querySelectorAll(".arrow")).forEach((arrow) => {
           const x = parseFloat(arrow.dataset.x);
@@ -876,16 +933,15 @@
           const halfW = ((arrow.offsetWidth / 2) / rect.width) * 100;
           const halfH = ((arrow.offsetHeight / 2) / rect.height) * 100;
           positionArrow(arrow, clamp(x, halfW, 100 - halfW), clamp(y, halfH, 100 - halfH));
-          setArrowRotation(arrow, parseFloat(arrow.dataset.rot || "0"));
         });
       });
 
       // init
       resizeCanvas();
       refreshMarkerPositions();
+      refreshCenterDotPosition();
       refreshConnectorPositions();
       applyBackgroundPreset(backgroundSelect.value);
-      setArrowPreset("straight");
     </script>
   </body>
 </html>
