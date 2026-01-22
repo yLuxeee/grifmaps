@@ -50,7 +50,8 @@
       }
 
       .toolbar button,
-      .toolbar label {
+      .toolbar label,
+      .toolbar select {
         font-size: 0.95rem;
         display: inline-flex;
         align-items: center;
@@ -68,7 +69,8 @@
         font-weight: 600;
       }
 
-      .toolbar button[data-mode].active {
+      .toolbar button[data-mode].active,
+      .toolbar button[data-arrow].active {
         background: #2563eb;
         color: #f8fafc;
       }
@@ -91,6 +93,16 @@
         accent-color: #2563eb;
       }
 
+      .toolbar select {
+        padding: 8px 12px;
+        border-radius: 999px;
+        border: 1px solid #cbd5e1;
+        background: #f8fafc;
+        color: #0f172a;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
       .field-wrapper {
         display: flex;
         justify-content: center;
@@ -104,20 +116,31 @@
         border-radius: 28px;
         border: 10px solid rgba(15, 23, 42, 0.85);
         background-color: #d4d4d8;
+
+        /* Default grid */
         background-image:
           linear-gradient(90deg, rgba(107, 114, 128, 0.25) 0, rgba(107, 114, 128, 0.25) 1px, transparent 1px,
             transparent 72px),
           linear-gradient(180deg, rgba(107, 114, 128, 0.25) 0, rgba(107, 114, 128, 0.25) 1px, transparent 1px,
             transparent 72px);
         background-size: 72px 72px;
+
         box-shadow: 0 30px 60px rgba(15, 23, 42, 0.35);
         overflow: hidden;
+      }
+
+      .field.canvas-bg {
+        /* when background preset is an image */
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
       }
 
       .field canvas,
       .connector-layer,
       .goal-point,
-      .marker {
+      .marker,
+      .arrow {
         position: absolute;
       }
 
@@ -176,11 +199,14 @@
         color: #92400e;
       }
 
-      .field.moving .marker:active {
-        transform: translate(-50%, -50%) scale(1.05);
+      .field.moving .marker:active,
+      .field.moving .arrow:active {
+        transform: translate(-50%, -50%) scale(1.05) rotate(var(--rot, 0deg));
       }
 
-      .field.drawing-mode .marker {
+      .field.drawing-mode .marker,
+      .field.drawing-mode .arrow,
+      .field.arrow-mode .marker {
         pointer-events: none;
         opacity: 0.85;
       }
@@ -204,6 +230,45 @@
         background: #1d4ed8;
       }
 
+      /* --- Preset Arrows --- */
+      .arrow {
+        width: clamp(64px, 10vmin, 110px);
+        height: clamp(26px, 4.5vmin, 44px);
+        transform: translate(-50%, -50%) rotate(var(--rot, 0deg));
+        transform-origin: center;
+        filter: drop-shadow(0 8px 14px rgba(15, 23, 42, 0.28));
+        user-select: none;
+        touch-action: none;
+        pointer-events: auto;
+      }
+
+      .arrow svg {
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+
+      .arrow .stroke {
+        fill: none;
+        stroke: var(--arrow-color, #ef4444);
+        stroke-width: 6;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+
+      .arrow .fill {
+        fill: var(--arrow-color, #ef4444);
+      }
+
+      /* tiny hint text */
+      .hint {
+        margin-left: auto;
+        font-size: 0.85rem;
+        color: #334155;
+        font-weight: 600;
+        opacity: 0.9;
+      }
+
       .sr-only {
         position: absolute;
         width: 1px;
@@ -224,6 +289,11 @@
         .toolbar h1 {
           flex-basis: 100%;
         }
+
+        .hint {
+          flex-basis: 100%;
+          margin-left: 0;
+        }
       }
     </style>
   </head>
@@ -231,52 +301,45 @@
     <main class="app" aria-labelledby="appTitle">
       <div class="toolbar" role="group" aria-label="Drawing controls">
         <h1 id="appTitle">Play Diagrammer</h1>
+
         <button type="button" data-mode="move" class="active">Move Pieces</button>
         <button type="button" data-mode="draw">Draw Routes</button>
+        <button type="button" data-mode="arrow">Place Arrows</button>
+
         <label>
           <span class="sr-only">Brush color</span>
           <input type="color" id="colorPicker" value="#ef4444" aria-label="Brush color" />
         </label>
+
         <label for="brushSize">Brush size</label>
-        <input
-          type="range"
-          id="brushSize"
-          min="2"
-          max="24"
-          value="8"
-          aria-label="Brush size"
-        />
+        <input type="range" id="brushSize" min="2" max="24" value="8" aria-label="Brush size" />
+
+        <label for="backgroundSelect">Background</label>
+        <select id="backgroundSelect" aria-label="Background preset">
+          <option value="grid" selected>Grid (Default)</option>
+          <option value="football">Football Field</option>
+          <option value="basketball">Basketball Court</option>
+          <option value="chalk">Chalkboard</option>
+        </select>
+
+        <button type="button" data-arrow="straight" class="active">Straight Arrow</button>
+        <button type="button" data-arrow="curve">Curved Arrow</button>
+        <button type="button" data-arrow="block">Block Arrow</button>
+
         <button type="button" id="clearCanvas">Clear Drawing</button>
+
+        <span class="hint">Tip: Right-click a marker to toggle its goal line. Shift+Wheel rotates arrows.</span>
       </div>
+
       <div class="field-wrapper">
-        <section
-          class="field moving"
-          id="field"
-          aria-label="Interactive field with draggable markers and drawing canvas"
-        >
+        <section class="field moving" id="field" aria-label="Interactive field">
           <canvas id="drawingCanvas" aria-hidden="true"></canvas>
-          <svg
-            class="connector-layer"
-            viewBox="0 0 100 100"
-            preserveAspectRatio="none"
-            aria-hidden="true"
-          ></svg>
-          <div
-            class="goal-point red"
-            data-goal="red"
-            data-x="10"
-            data-y="50"
-            style="left: 10%; top: 50%;"
-            aria-hidden="true"
-          ></div>
-          <div
-            class="goal-point blue"
-            data-goal="blue"
-            data-x="90"
-            data-y="50"
-            style="left: 90%; top: 50%;"
-            aria-hidden="true"
-          ></div>
+
+          <svg class="connector-layer" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"></svg>
+
+          <div class="goal-point red" data-goal="red" data-x="10" data-y="50" style="left: 10%; top: 50%;" aria-hidden="true"></div>
+          <div class="goal-point blue" data-goal="blue" data-x="90" data-y="50" style="left: 90%; top: 50%;" aria-hidden="true"></div>
+
           <div class="marker red" data-label="R1" data-x="18" data-y="22" role="button"></div>
           <div class="marker red" data-label="R2" data-x="32" data-y="68" role="button"></div>
           <div class="marker red" data-label="R3" data-x="50" data-y="32" role="button"></div>
@@ -288,6 +351,7 @@
         </section>
       </div>
     </main>
+
     <script>
       const field = document.getElementById("field");
       const canvas = document.getElementById("drawingCanvas");
@@ -295,10 +359,14 @@
       const brushSizeControl = document.getElementById("brushSize");
       const clearButton = document.getElementById("clearCanvas");
       const modeButtons = document.querySelectorAll("[data-mode]");
+      const arrowButtons = document.querySelectorAll("[data-arrow]");
+      const backgroundSelect = document.getElementById("backgroundSelect");
+
       const markers = Array.from(document.querySelectorAll(".marker"));
       const connectorLayer = field.querySelector(".connector-layer");
       const markerConnections = new Map();
       const ctx = canvas.getContext("2d");
+
       const goalTargets = {
         red: field.querySelector('[data-goal="red"]'),
         blue: field.querySelector('[data-goal="blue"]'),
@@ -306,10 +374,13 @@
 
       let mode = "move";
       let activeMarker = null;
+      let activeArrow = null;
       let activePointerId = null;
       let pointerOffset = { x: 0, y: 0 };
       let isDrawing = false;
       let lastPoint = null;
+
+      let arrowPreset = "straight"; // straight | curve | block
 
       function clamp(value, min, max) {
         return Math.min(Math.max(value, min), max);
@@ -327,6 +398,13 @@
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.drawImage(prev, 0, 0, prev.width, prev.height, 0, 0, canvas.width, canvas.height);
+      }
+
+      function pointerPercentages(event, rect) {
+        return {
+          x: ((event.clientX - rect.left) / rect.width) * 100,
+          y: ((event.clientY - rect.top) / rect.height) * 100,
+        };
       }
 
       function positionMarker(marker, xPercent, yPercent) {
@@ -390,35 +468,37 @@
 
       function setMode(newMode) {
         mode = newMode;
+
         modeButtons.forEach((button) => {
           const isActive = button.dataset.mode === newMode;
           button.classList.toggle("active", isActive);
         });
+
         field.classList.toggle("drawing-mode", newMode === "draw");
+        field.classList.toggle("arrow-mode", newMode === "arrow");
         field.classList.toggle("moving", newMode === "move");
+
+        // Markers should not be draggable in draw/arrow modes
         markers.forEach((marker) => {
-          marker.style.pointerEvents = newMode === "draw" ? "none" : "auto";
+          marker.style.pointerEvents = newMode === "move" ? "auto" : "none";
+        });
+
+        // Arrows should only be draggable in move mode
+        Array.from(field.querySelectorAll(".arrow")).forEach((arrow) => {
+          arrow.style.pointerEvents = newMode === "move" ? "auto" : "none";
+          arrow.style.opacity = newMode === "draw" ? "0.85" : "1";
         });
       }
 
-      function pointerPercentages(event, rect) {
-        return {
-          x: ((event.clientX - rect.left) / rect.width) * 100,
-          y: ((event.clientY - rect.top) / rect.height) * 100,
-        };
-      }
-
       function onMarkerPointerDown(event) {
-        if (event.button === 1) {
+        // RIGHT CLICK toggles goal connector now
+        if (event.button === 2) {
           event.preventDefault();
           const marker = event.currentTarget;
           const shouldHighlight = !marker.classList.contains("highlight");
           marker.classList.toggle("highlight", shouldHighlight);
-          if (shouldHighlight) {
-            createConnector(marker);
-          } else {
-            removeConnector(marker);
-          }
+          if (shouldHighlight) createConnector(marker);
+          else removeConnector(marker);
           updateConnector(marker);
           return;
         }
@@ -428,6 +508,7 @@
         event.preventDefault();
         activeMarker = event.currentTarget;
         activePointerId = event.pointerId;
+
         const rect = field.getBoundingClientRect();
         const pointerPercents = pointerPercentages(event, rect);
         const markerX = parseFloat(activeMarker.dataset.x);
@@ -501,8 +582,258 @@
         ctx.clearRect(0, 0, canvas.width, canvas.height);
       }
 
-      // Event listeners
+      // ---- Background presets (no external dependencies; all inline SVG data URLs) ----
+      const bgPresets = {
+        grid: null,
+        football: svgDataUrl(`
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800">
+            <defs>
+              <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#166534"/>
+                <stop offset="1" stop-color="#14532d"/>
+              </linearGradient>
+              <pattern id="stripes" width="160" height="160" patternUnits="userSpaceOnUse">
+                <rect width="160" height="160" fill="none"/>
+                <rect x="0" y="0" width="80" height="160" fill="rgba(255,255,255,0.06)"/>
+              </pattern>
+            </defs>
+            <rect width="1200" height="800" fill="url(#g)"/>
+            <rect width="1200" height="800" fill="url(#stripes)"/>
+            <g stroke="rgba(255,255,255,0.72)" stroke-width="4">
+              <rect x="60" y="60" width="1080" height="680" fill="none" rx="24"/>
+              <line x1="600" y1="60" x2="600" y2="740"/>
+            </g>
+            <g stroke="rgba(255,255,255,0.45)" stroke-width="2">
+              ${Array.from({length: 20}, (_, i) => {
+                const x = 60 + i * (1080/20);
+                return `<line x1="${x}" y1="60" x2="${x}" y2="740"/>`;
+              }).join("")}
+            </g>
+            <g fill="rgba(255,255,255,0.75)" font-family="system-ui, sans-serif" font-size="26" font-weight="700">
+              <text x="90" y="110">10</text><text x="90" y="700">10</text>
+              <text x="1090" y="110" text-anchor="end">10</text><text x="1090" y="700" text-anchor="end">10</text>
+            </g>
+          </svg>
+        `),
+        basketball: svgDataUrl(`
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800">
+            <defs>
+              <linearGradient id="wood" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#f3e1c5"/>
+                <stop offset="1" stop-color="#e6c89d"/>
+              </linearGradient>
+              <pattern id="planks" width="120" height="120" patternUnits="userSpaceOnUse">
+                <rect width="120" height="120" fill="none"/>
+                <path d="M0 0 H120" stroke="rgba(124,45,18,0.15)" stroke-width="6"/>
+              </pattern>
+            </defs>
+            <rect width="1200" height="800" fill="url(#wood)"/>
+            <rect width="1200" height="800" fill="url(#planks)" opacity="0.8"/>
+            <g stroke="rgba(15,23,42,0.65)" stroke-width="6" fill="none">
+              <rect x="80" y="80" width="1040" height="640" rx="26"/>
+              <line x1="600" y1="80" x2="600" y2="720"/>
+              <circle cx="600" cy="400" r="90"/>
+              <rect x="80" y="250" width="190" height="300" rx="18"/>
+              <rect x="930" y="250" width="190" height="300" rx="18"/>
+              <circle cx="270" cy="400" r="70"/>
+              <circle cx="930" cy="400" r="70"/>
+            </g>
+          </svg>
+        `),
+        chalk: svgDataUrl(`
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800">
+            <defs>
+              <filter id="noise">
+                <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" stitchTiles="stitch"/>
+                <feColorMatrix type="matrix"
+                  values="1 0 0 0 0
+                          0 1 0 0 0
+                          0 0 1 0 0
+                          0 0 0 0.18 0"/>
+              </filter>
+            </defs>
+            <rect width="1200" height="800" fill="#0b2b26"/>
+            <rect width="1200" height="800" filter="url(#noise)"/>
+            <g stroke="rgba(248,250,252,0.6)" stroke-width="5" fill="none">
+              <rect x="80" y="80" width="1040" height="640" rx="28"/>
+              <path d="M120 200 C 300 120, 420 260, 600 200 S 900 300, 1080 220" />
+              <path d="M120 520 C 320 600, 460 460, 600 520 S 900 420, 1080 520" />
+              <circle cx="600" cy="400" r="90"/>
+            </g>
+          </svg>
+        `),
+      };
+
+      function svgDataUrl(svgString) {
+        const cleaned = svgString.replace(/\s+/g, " ").trim();
+        return `url("data:image/svg+xml;utf8,${encodeURIComponent(cleaned)}")`;
+      }
+
+      function applyBackgroundPreset(key) {
+        if (key === "grid") {
+          field.classList.remove("canvas-bg");
+          field.style.backgroundColor = "#d4d4d8";
+          field.style.backgroundImage =
+            "linear-gradient(90deg, rgba(107, 114, 128, 0.25) 0, rgba(107, 114, 128, 0.25) 1px, transparent 1px, transparent 72px), " +
+            "linear-gradient(180deg, rgba(107, 114, 128, 0.25) 0, rgba(107, 114, 128, 0.25) 1px, transparent 1px, transparent 72px)";
+          field.style.backgroundSize = "72px 72px";
+          return;
+        }
+
+        field.classList.add("canvas-bg");
+        field.style.backgroundSize = "cover";
+        field.style.backgroundPosition = "center";
+        field.style.backgroundRepeat = "no-repeat";
+        field.style.backgroundImage = bgPresets[key] || "none";
+      }
+
+      // ---- Arrow placement ----
+      function setArrowPreset(preset) {
+        arrowPreset = preset;
+        arrowButtons.forEach((btn) => btn.classList.toggle("active", btn.dataset.arrow === preset));
+      }
+
+      function createArrowElement(preset, xPercent, yPercent, color) {
+        const el = document.createElement("div");
+        el.className = "arrow";
+        el.dataset.x = xPercent.toFixed(2);
+        el.dataset.y = yPercent.toFixed(2);
+        el.dataset.rot = "0";
+        el.dataset.preset = preset;
+        el.style.left = `${xPercent}%`;
+        el.style.top = `${yPercent}%`;
+        el.style.setProperty("--arrow-color", color);
+        el.style.setProperty("--rot", "0deg");
+
+        // SVG templates
+        const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        svg.setAttribute("viewBox", "0 0 120 48");
+        svg.setAttribute("aria-hidden", "true");
+
+        if (preset === "straight") {
+          svg.innerHTML = `
+            <path class="stroke" d="M10 24 H86"/>
+            <path class="fill" d="M86 10 L114 24 L86 38 Z"/>
+          `;
+        } else if (preset === "curve") {
+          svg.innerHTML = `
+            <path class="stroke" d="M12 34 C 36 8, 66 8, 88 22" />
+            <path class="fill" d="M86 10 L114 24 L86 38 Z"/>
+          `;
+        } else if (preset === "block") {
+          svg.innerHTML = `
+            <path class="stroke" d="M12 24 H64"/>
+            <path class="fill" d="M64 12 H92 V6 L114 24 L92 42 V36 H64 Z"/>
+          `;
+        }
+
+        el.appendChild(svg);
+
+        // Drag in move mode
+        el.addEventListener("pointerdown", onArrowPointerDown);
+        el.addEventListener("pointermove", onArrowPointerMove);
+        el.addEventListener("pointerup", endArrowDrag);
+        el.addEventListener("pointercancel", endArrowDrag);
+
+        // Rotate with Shift+Wheel (works in move mode)
+        el.addEventListener("wheel", (e) => {
+          if (!e.shiftKey) return;
+          e.preventDefault();
+          const current = parseFloat(el.dataset.rot || "0");
+          const delta = e.deltaY > 0 ? 8 : -8;
+          const next = (current + delta) % 360;
+          setArrowRotation(el, next);
+        }, { passive: false });
+
+        return el;
+      }
+
+      function setArrowRotation(el, degrees) {
+        el.dataset.rot = String(degrees);
+        el.style.setProperty("--rot", `${degrees}deg`);
+      }
+
+      function positionArrow(el, xPercent, yPercent) {
+        el.style.left = `${xPercent}%`;
+        el.style.top = `${yPercent}%`;
+        el.dataset.x = xPercent.toFixed(2);
+        el.dataset.y = yPercent.toFixed(2);
+      }
+
+      function onArrowPointerDown(event) {
+        if (mode !== "move") return;
+        event.preventDefault();
+        activeArrow = event.currentTarget;
+        activePointerId = event.pointerId;
+
+        const rect = field.getBoundingClientRect();
+        const pointerPercents = pointerPercentages(event, rect);
+        const x = parseFloat(activeArrow.dataset.x);
+        const y = parseFloat(activeArrow.dataset.y);
+
+        pointerOffset = {
+          x: pointerPercents.x - x,
+          y: pointerPercents.y - y,
+        };
+
+        activeArrow.setPointerCapture(activePointerId);
+      }
+
+      function onArrowPointerMove(event) {
+        if (!activeArrow || event.pointerId !== activePointerId) return;
+
+        const rect = field.getBoundingClientRect();
+        const { x, y } = pointerPercentages(event, rect);
+
+        const halfW = ((activeArrow.offsetWidth / 2) / rect.width) * 100;
+        const halfH = ((activeArrow.offsetHeight / 2) / rect.height) * 100;
+
+        const targetX = clamp(x - pointerOffset.x, halfW, 100 - halfW);
+        const targetY = clamp(y - pointerOffset.y, halfH, 100 - halfH);
+
+        positionArrow(activeArrow, targetX, targetY);
+      }
+
+      function endArrowDrag(event) {
+        if (event.pointerId !== activePointerId) return;
+        activeArrow?.releasePointerCapture(activePointerId);
+        activeArrow = null;
+        activePointerId = null;
+      }
+
+      // Place arrow on click in arrow mode
+      function placeArrowAt(event) {
+        if (mode !== "arrow") return;
+        // only left click places
+        if (event.button !== 0) return;
+
+        event.preventDefault();
+        const rect = field.getBoundingClientRect();
+        const { x, y } = pointerPercentages(event, rect);
+
+        const arrow = createArrowElement(arrowPreset, x, y, colorPicker.value);
+        // clamp to stay within bounds
+        field.appendChild(arrow);
+
+        // after append, clamp based on real size
+        const halfW = ((arrow.offsetWidth / 2) / rect.width) * 100;
+        const halfH = ((arrow.offsetHeight / 2) / rect.height) * 100;
+        positionArrow(
+          arrow,
+          clamp(x, halfW, 100 - halfW),
+          clamp(y, halfH, 100 - halfH)
+        );
+
+        // pointer events depend on current mode
+        arrow.style.pointerEvents = "none";
+      }
+
+      // ---- Event listeners ----
+      // Prevent the browser context menu on the field (so right-click can be used)
+      field.addEventListener("contextmenu", (e) => e.preventDefault());
+
       markers.forEach((marker) => {
+        marker.addEventListener("contextmenu", (e) => e.preventDefault());
         marker.addEventListener("pointerdown", onMarkerPointerDown);
         marker.addEventListener("pointermove", onMarkerPointerMove);
         marker.addEventListener("pointerup", endMarkerDrag);
@@ -510,9 +841,8 @@
       });
 
       field.addEventListener("pointerdown", (event) => {
-        if (mode === "draw") {
-          startDrawing(event);
-        }
+        if (mode === "draw") startDrawing(event);
+        if (mode === "arrow") placeArrowAt(event);
       });
 
       field.addEventListener("pointermove", draw);
@@ -523,17 +853,39 @@
         button.addEventListener("click", () => setMode(button.dataset.mode));
       });
 
+      arrowButtons.forEach((button) => {
+        button.addEventListener("click", () => setArrowPreset(button.dataset.arrow));
+      });
+
+      backgroundSelect.addEventListener("change", () => {
+        applyBackgroundPreset(backgroundSelect.value);
+      });
+
       clearButton.addEventListener("click", clearCanvas);
 
       window.addEventListener("resize", () => {
         resizeCanvas();
         refreshMarkerPositions();
         refreshConnectorPositions();
+
+        // refresh arrow pixel placement based on stored percents
+        const rect = field.getBoundingClientRect();
+        Array.from(field.querySelectorAll(".arrow")).forEach((arrow) => {
+          const x = parseFloat(arrow.dataset.x);
+          const y = parseFloat(arrow.dataset.y);
+          const halfW = ((arrow.offsetWidth / 2) / rect.width) * 100;
+          const halfH = ((arrow.offsetHeight / 2) / rect.height) * 100;
+          positionArrow(arrow, clamp(x, halfW, 100 - halfW), clamp(y, halfH, 100 - halfH));
+          setArrowRotation(arrow, parseFloat(arrow.dataset.rot || "0"));
+        });
       });
 
+      // init
       resizeCanvas();
       refreshMarkerPositions();
       refreshConnectorPositions();
+      applyBackgroundPreset(backgroundSelect.value);
+      setArrowPreset("straight");
     </script>
   </body>
 </html>
