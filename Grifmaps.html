@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Play Diagrammer</title>
+    <title>Grifmaps</title>
     <style>
       :root {
         color-scheme: light dark;
@@ -25,28 +25,37 @@
         padding: clamp(16px, 3vw, 32px);
       }
 
+       body.is-loading {
+        overflow: hidden;
+      }
+
       .app {
-        width: min(98vw, 1120px);
+        width: min(98vw, 1280px);
         display: grid;
         gap: 16px;
+        opacity: 0;
+        animation: app-fade-in 0.6s ease 1.8s forwards;
       }
 
       .toolbar {
         display: flex;
         flex-wrap: wrap;
         align-items: center;
-        gap: 12px;
-        padding: 12px 16px;
-        border-radius: 18px;
-        background: rgba(255, 255, 255, 0.85);
-        box-shadow: 0 20px 45px rgba(15, 23, 42, 0.2);
-        backdrop-filter: blur(6px);
+        gap: 14px;
+        padding: 14px 18px;
+        border-radius: 20px;
+        background:
+          linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(241, 245, 249, 0.9));
+        box-shadow: 0 24px 50px rgba(15, 23, 42, 0.18);
+        border: 1px solid rgba(148, 163, 184, 0.35);
+        backdrop-filter: blur(10px);
       }
 
       .toolbar h1 {
         font-size: 1.1rem;
         font-weight: 600;
-        margin: 0 16px 0 0;
+        color: #0f172a;
+        margin: 0 12px 0 0;
       }
 
       .toolbar button,
@@ -61,8 +70,8 @@
       .toolbar button {
         padding: 8px 14px;
         border-radius: 999px;
-        border: none;
-        background: #e2e8f0;
+        border: 1px solid rgba(148, 163, 184, 0.4);
+        background: rgba(226, 232, 240, 0.7);
         color: #0f172a;
         cursor: pointer;
         transition: background 0.2s ease;
@@ -70,22 +79,25 @@
       }
 
       .toolbar button[data-mode].active {
-        background: #2563eb;
+        background: linear-gradient(120deg, #2563eb, #1d4ed8);
         color: #f8fafc;
+        border-color: transparent;
+        box-shadow: 0 10px 20px rgba(37, 99, 235, 0.3);
       }
 
       .toolbar button:hover {
-        background: #cbd5f5;
+        background: rgba(203, 213, 245, 0.9);
       }
 
       .toolbar input[type="color"] {
         width: 44px;
         height: 30px;
         border-radius: 8px;
-        border: 1px solid #94a3b8;
+        border: 1px solid rgba(148, 163, 184, 0.6);
         padding: 0;
         background: none;
         cursor: pointer;
+        box-shadow: 0 6px 14px rgba(15, 23, 42, 0.12);
       }
 
       .toolbar input[type="range"] {
@@ -95,8 +107,8 @@
       .toolbar select {
         padding: 8px 12px;
         border-radius: 999px;
-        border: 1px solid #cbd5e1;
-        background: #f8fafc;
+        border: 1px solid rgba(203, 213, 225, 0.7);
+        background: rgba(248, 250, 252, 0.9);
         color: #0f172a;
         font-weight: 600;
         cursor: pointer;
@@ -105,6 +117,11 @@
       .field-wrapper {
         display: flex;
         justify-content: center;
+        position: relative;
+      }
+
+      .field-stage {
+        position: relative;
       }
 
       .field {
@@ -148,7 +165,7 @@
       .connector-layer,
       .goal-point,
       .marker,
-      .arrow,
+      
       .mini-dot {
         position: absolute;
       }
@@ -207,16 +224,11 @@
       }
 
       .field.moving .marker:active,
-      .field.moving .mini-dot:active,
-      .field.moving .arrow:active {
+      .field.moving .mini-dot:active {
         transform: translate(-50%, -50%) scale(1.05);
       }
 
-      .field.drawing-mode .marker,
-      .field.drawing-mode .mini-dot,
-      .field.drawing-mode .arrow,
-      .field.arrow-mode .marker,
-      .field.arrow-mode .mini-dot {
+      .field.drawing-mode .mini-dot {
         pointer-events: none;
         opacity: 0.85;
       }
@@ -239,35 +251,7 @@
         background: #1d4ed8;
       }
 
-      /* --- Preset Arrows --- */
-      .arrow {
-        width: clamp(64px, 10vmin, 110px);
-        height: clamp(26px, 4.5vmin, 44px);
-        transform: translate(-50%, -50%);
-        transform-origin: center;
-        filter: drop-shadow(0 8px 14px rgba(15, 23, 42, 0.28));
-        user-select: none;
-        touch-action: none;
-        pointer-events: auto;
-      }
-
-      .arrow svg {
-        width: 100%;
-        height: 100%;
-        display: block;
-      }
-
-      .arrow .stroke {
-        fill: none;
-        stroke: var(--arrow-color, #ef4444);
-        stroke-width: 6;
-        stroke-linecap: round;
-        stroke-linejoin: round;
-      }
-
-      .arrow .fill {
-        fill: var(--arrow-color, #ef4444);
-      }
+     
 
       .mini-dot {
         width: clamp(16px, 3vmin, 24px);
@@ -291,6 +275,144 @@
         color: #334155;
         font-weight: 600;
         opacity: 0.9;
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: rgba(226, 232, 240, 0.6);
+        border: 1px solid rgba(203, 213, 225, 0.7);
+      }
+
+      .settings-panel {
+        background: rgba(255, 255, 255, 0.9);
+        border-radius: 18px;
+        padding: 12px;
+        box-shadow: 0 18px 32px rgba(15, 23, 42, 0.2);
+        backdrop-filter: blur(6px);
+        display: grid;
+        gap: 12px;
+        width: 220px;
+        position: absolute;
+        right: calc(100% + 16px);
+        top: 0;
+      }
+
+      .saved-panel {
+        background: rgba(255, 255, 255, 0.9);
+        border-radius: 18px;
+        padding: 12px;
+        box-shadow: 0 18px 32px rgba(15, 23, 42, 0.2);
+        backdrop-filter: blur(6px);
+        display: grid;
+        gap: 12px;
+        width: 220px;
+        position: absolute;
+        left: calc(100% + 16px);
+        top: 0;
+      }
+
+      .settings-toggle {
+        width: 100%;
+        padding: 10px 14px;
+        border-radius: 999px;
+        border: none;
+        background: #2563eb;
+        color: #f8fafc;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      .settings-drawer {
+        display: grid;
+        gap: 12px;
+      }
+
+      .settings-drawer[hidden] {
+        display: none;
+      }
+
+      .settings-drawer h2 {
+        font-size: 0.95rem;
+        margin: 0;
+        color: #0f172a;
+      }
+
+      .settings-list {
+        display: grid;
+        gap: 10px;
+      }
+
+      .settings-item {
+        display: grid;
+        gap: 8px;
+        padding: 10px;
+        border-radius: 14px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+      }
+
+      .settings-item label {
+        font-size: 0.85rem;
+        color: #334155;
+        font-weight: 600;
+        display: grid;
+        gap: 6px;
+      }
+
+      .settings-item input[type="text"] {
+        border-radius: 10px;
+        border: 1px solid #cbd5e1;
+        padding: 8px 10px;
+        font-weight: 600;
+      }
+
+      .settings-item input[type="color"] {
+        width: 100%;
+        height: 34px;
+        border-radius: 10px;
+        border: 1px solid #cbd5e1;
+        padding: 0;
+        background: none;
+        cursor: pointer;
+      }
+
+      .saved-panel h2 {
+        font-size: 0.95rem;
+        margin: 0;
+        color: #0f172a;
+      }
+
+      .saved-panel input[type="text"] {
+        border-radius: 10px;
+        border: 1px solid #cbd5e1;
+        padding: 8px 10px;
+        font-weight: 600;
+        width: 100%;
+      }
+
+      .saved-panel button {
+        width: 100%;
+        padding: 10px 14px;
+        border-radius: 999px;
+        border: none;
+        background: #0f172a;
+        color: #f8fafc;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      .saved-list {
+        display: grid;
+        gap: 10px;
+      }
+
+      .saved-list button {
+        border-radius: 12px;
+        border: 1px solid rgba(148, 163, 184, 0.6);
+        background: rgba(248, 250, 252, 0.9);
+        color: #0f172a;
+        font-weight: 600;
+        padding: 8px 10px;
+        cursor: pointer;
+        text-align: left;
       }
 
       .sr-only {
@@ -303,6 +425,49 @@
         clip: rect(0, 0, 0, 0);
         white-space: nowrap;
         border: 0;
+      }
+
+      .splash {
+        position: fixed;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        background: radial-gradient(circle at top left, #e2e8f0, #bfdbfe);
+        z-index: 999;
+        animation: splash-fade-out 0.8s ease 1.1s forwards;
+      }
+
+      .splash__logo {
+        font-size: clamp(2.5rem, 8vw, 4.5rem);
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        color: #1e3a8a;
+        text-transform: uppercase;
+        animation: splash-fade-in 0.8s ease forwards;
+      }
+
+      @keyframes splash-fade-in {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes splash-fade-out {
+        to {
+          opacity: 0;
+          visibility: hidden;
+        }
+      }
+
+      @keyframes app-fade-in {
+        to {
+          opacity: 1;
+        }
       }
 
       @media (max-width: 640px) {
@@ -318,17 +483,39 @@
           flex-basis: 100%;
           margin-left: 0;
         }
+
+        .field-wrapper {
+          justify-content: stretch;
+        }
+
+        .field-stage {
+          display: grid;
+          gap: 12px;
+        }
+
+        .settings-panel {
+          position: static;
+          width: 100%;
+        }
+
+        .saved-panel {
+          position: static;
+          width: 100%;
+        }
       }
     </style>
   </head>
-  <body>
+   <body class="is-loading">
+    <div class="splash" id="splashScreen" aria-hidden="true">
+      <div class="splash__logo">GrifMaps</div>
+    </div>
     <main class="app" aria-labelledby="appTitle">
       <div class="toolbar" role="group" aria-label="Drawing controls">
-        <h1 id="appTitle">Play Diagrammer</h1>
+        <h1 id="appTitle">Grifmaps</h1>
 
         <button type="button" data-mode="move" class="active">Move Pieces</button>
         <button type="button" data-mode="draw">Draw Routes</button>
-        <button type="button" data-mode="arrow">Place Arrows</button>
+        
 
         <label>
           <span class="sr-only">Brush color</span>
@@ -336,7 +523,7 @@
         </label>
 
         <label for="brushSize">Brush size</label>
-        <input type="range" id="brushSize" min="2" max="24" value="8" aria-label="Brush size" />
+        <input type="range" id="brushSize" min="2" max="24" value="8" aria-label="Brush Size" />
 
         <label for="backgroundSelect">Background</label>
         <select id="backgroundSelect" aria-label="Background preset">
@@ -346,7 +533,7 @@
           <option value="chalk">Chalkboard</option>
         </select>
 
-        <button type="button" id="toggleCenterDot" aria-pressed="true">Toggle Center Dot</button>
+        <button type="button" id="toggleCenterDot" aria-pressed="true">Toggle Ball</button>
 
         <button type="button" id="clearCanvas">Clear Drawing</button>
 
@@ -354,26 +541,44 @@
       </div>
 
       <div class="field-wrapper">
-        <section class="field moving" id="field" aria-label="Interactive field">
-          <canvas id="drawingCanvas" aria-hidden="true"></canvas>
+        <div class="field-stage">
+          <aside class="settings-panel" aria-label="Marker settings">
+            <button type="button" class="settings-toggle" id="settingsToggle" aria-expanded="true">
+              Marker Settings
+            </button>
+            <div class="settings-drawer" id="settingsDrawer">
+              <h2>Rename &amp; recolor dots</h2>
+              <div class="settings-list" id="settingsList"></div>
+            </div>
+          </aside>
+          <aside class="saved-panel" aria-label="Saved positions">
+            <h2>Saved positions</h2>
+            <label class="sr-only" for="saveName">Position name</label>
+            <input type="text" id="saveName" placeholder="Position name" />
+            <button type="button" id="savePosition">Save Position</button>
+            <div class="saved-list" id="savedList" role="list"></div>
+          </aside>
+          <section class="field moving" id="field" aria-label="Interactive field">
+            <canvas id="drawingCanvas" aria-hidden="true"></canvas>
 
-          <svg class="connector-layer" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"></svg>
+            <svg class="connector-layer" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"></svg>
 
-          <div class="goal-point red" data-goal="red" data-x="10" data-y="50" style="left: 10%; top: 50%;" aria-hidden="true"></div>
-          <div class="goal-point blue" data-goal="blue" data-x="90" data-y="50" style="left: 90%; top: 50%;" aria-hidden="true"></div>
+            <div class="goal-point red" data-goal="red" data-x="10" data-y="50" style="left: 10%; top: 50%;" aria-hidden="true"></div>
+            <div class="goal-point blue" data-goal="blue" data-x="90" data-y="50" style="left: 90%; top: 50%;" aria-hidden="true"></div>
 
-          <div class="marker red" data-label="R1" data-x="18" data-y="22" role="button"></div>
-          <div class="marker red" data-label="R2" data-x="32" data-y="68" role="button"></div>
-          <div class="marker red" data-label="R3" data-x="50" data-y="32" role="button"></div>
-          <div class="marker red" data-label="R4" data-x="70" data-y="78" role="button"></div>
+            <div class="marker red" data-label="R1" data-x="18" data-y="22" role="button"></div>
+            <div class="marker red" data-label="R2" data-x="32" data-y="68" role="button"></div>
+            <div class="marker red" data-label="R3" data-x="50" data-y="32" role="button"></div>
+            <div class="marker red" data-label="R4" data-x="70" data-y="78" role="button"></div>
 
-          <div class="marker blue" data-label="B1" data-x="82" data-y="26" role="button"></div>
-          <div class="marker blue" data-label="B2" data-x="24" data-y="48" role="button"></div>
-          <div class="marker blue" data-label="B3" data-x="54" data-y="60" role="button"></div>
-          <div class="marker blue" data-label="B4" data-x="40" data-y="84" role="button"></div>
+            <div class="marker blue" data-label="B1" data-x="82" data-y="26" role="button"></div>
+            <div class="marker blue" data-label="B2" data-x="24" data-y="48" role="button"></div>
+            <div class="marker blue" data-label="B3" data-x="54" data-y="60" role="button"></div>
+            <div class="marker blue" data-label="B4" data-x="40" data-y="84" role="button"></div>
 
-          <div class="mini-dot" id="centerDot" data-x="50" data-y="50" role="button" aria-label="Center dot"></div>
-        </section>
+            <div class="mini-dot" id="centerDot" data-x="50" data-y="50" role="button" aria-label="Center dot"></div>
+          </section>
+        </div>
       </div>
     </main>
 
@@ -391,6 +596,12 @@
       const centerDot = document.getElementById("centerDot");
       const connectorLayer = field.querySelector(".connector-layer");
       const markerConnections = new Map();
+      const settingsToggle = document.getElementById("settingsToggle");
+      const settingsDrawer = document.getElementById("settingsDrawer");
+      const settingsList = document.getElementById("settingsList");
+      const saveNameInput = document.getElementById("saveName");
+      const savePositionButton = document.getElementById("savePosition");
+      const savedList = document.getElementById("savedList");
       const ctx = canvas.getContext("2d");
 
       const goalTargets = {
@@ -400,14 +611,15 @@
 
       let mode = "move";
       let activeMarker = null;
-      let activeArrow = null;
+      
       let activeCenterDot = null;
       let activePointerId = null;
       let pointerOffset = { x: 0, y: 0 };
       let isDrawing = false;
       let lastPoint = null;
+      const savedPositions = [];
 
-      let arrowPreset = "straight";
+      
 
       function clamp(value, min, max) {
         return Math.min(Math.max(value, min), max);
@@ -474,7 +686,7 @@
       function createConnector(marker) {
         if (!connectorLayer || markerConnections.has(marker)) return;
         const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-        const strokeColor = marker.classList.contains("red") ? "#ef4444" : "#3b82f6";
+        const strokeColor = marker.dataset.color || (marker.classList.contains("red") ? "#ef4444" : "#3b82f6");
         line.setAttribute("stroke", strokeColor);
         connectorLayer.appendChild(line);
         markerConnections.set(marker, line);
@@ -494,6 +706,9 @@
         const goalKey = getMarkerGoalKey(marker);
         const goalPoint = goalKey ? goalTargets[goalKey] : null;
         if (!line || !goalPoint) return;
+
+        const strokeColor = marker.dataset.color || (marker.classList.contains("red") ? "#ef4444" : "#3b82f6");
+        line.setAttribute("stroke", strokeColor);
 
         const markerX = parseFloat(marker.dataset.x);
         const markerY = parseFloat(marker.dataset.y);
@@ -519,10 +734,10 @@
         });
 
         field.classList.toggle("drawing-mode", newMode === "draw");
-        field.classList.toggle("arrow-mode", newMode === "arrow");
+        
         field.classList.toggle("moving", newMode === "move");
 
-        // Markers should not be draggable in draw/arrow modes
+        // Markers should not be draggable in draw mode
         markers.forEach((marker) => {
           marker.style.pointerEvents = newMode === "move" ? "auto" : "none";
         });
@@ -531,11 +746,7 @@
           centerDot.style.pointerEvents = newMode === "move" ? "auto" : "none";
         }
 
-        // Arrows should only be draggable in move mode
-        Array.from(field.querySelectorAll(".arrow")).forEach((arrow) => {
-          arrow.style.pointerEvents = newMode === "move" ? "auto" : "none";
-          arrow.style.opacity = newMode === "draw" ? "0.85" : "1";
-        });
+        
       }
 
       function onMarkerPointerDown(event) {
@@ -674,6 +885,147 @@
         ctx.clearRect(0, 0, canvas.width, canvas.height);
       }
 
+      function clampChannel(value) {
+        return clamp(Math.round(value), 0, 255);
+      }
+
+      function hexToRgb(hex) {
+        const normalized = hex.replace("#", "");
+        const value = normalized.length === 3
+          ? normalized.split("").map((ch) => ch + ch).join("")
+          : normalized;
+        const int = parseInt(value, 16);
+        return {
+          r: (int >> 16) & 255,
+          g: (int >> 8) & 255,
+          b: int & 255,
+        };
+      }
+
+      function rgbToHex({ r, g, b }) {
+        return `#${[r, g, b].map((channel) => channel.toString(16).padStart(2, "0")).join("")}`;
+      }
+
+      function adjustColor(hex, amount) {
+        const { r, g, b } = hexToRgb(hex);
+        return rgbToHex({
+          r: clampChannel(r + amount),
+          g: clampChannel(g + amount),
+          b: clampChannel(b + amount),
+        });
+      }
+
+      function getReadableTextColor(hex) {
+        const { r, g, b } = hexToRgb(hex);
+        const luminance = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+        return luminance > 0.6 ? "#0f172a" : "#f8fafc";
+      }
+
+      function applyMarkerColor(marker, color, applyStyle = true) {
+        marker.dataset.color = color;
+        if (applyStyle) {
+          const highlight = adjustColor(color, 50);
+          const shade = adjustColor(color, -40);
+          marker.style.background = `radial-gradient(circle at 30% 30%, ${highlight}, ${shade} 65%)`;
+          marker.style.color = getReadableTextColor(color);
+        }
+        updateConnector(marker);
+      }
+
+      function getDefaultMarkerColor(marker) {
+        return marker.classList.contains("red") ? "#ef4444" : "#3b82f6";
+      }
+
+      function buildMarkerSettings() {
+        if (!settingsList) return;
+        settingsList.innerHTML = "";
+
+        markers.forEach((marker, index) => {
+          const wrapper = document.createElement("div");
+          wrapper.className = "settings-item";
+
+          const nameLabel = document.createElement("label");
+          nameLabel.textContent = `Dot label (${marker.dataset.label || `Dot ${index + 1}`})`;
+          const nameInput = document.createElement("input");
+          nameInput.type = "text";
+          nameInput.value = marker.dataset.label || "";
+          nameInput.setAttribute("aria-label", `Label for ${marker.dataset.label || `dot ${index + 1}`}`);
+
+          nameInput.addEventListener("input", () => {
+            marker.dataset.label = nameInput.value;
+          });
+
+          nameLabel.appendChild(nameInput);
+
+          const colorLabel = document.createElement("label");
+          colorLabel.textContent = "Dot color";
+          const colorInput = document.createElement("input");
+          colorInput.type = "color";
+          colorInput.value = marker.dataset.color || getDefaultMarkerColor(marker);
+          colorInput.setAttribute("aria-label", `Color for ${marker.dataset.label || `dot ${index + 1}`}`);
+
+          colorInput.addEventListener("input", () => {
+            applyMarkerColor(marker, colorInput.value);
+          });
+
+          colorLabel.appendChild(colorInput);
+
+          wrapper.appendChild(nameLabel);
+          wrapper.appendChild(colorLabel);
+          settingsList.appendChild(wrapper);
+        });
+      }
+
+      function initializeMarkerColors() {
+        markers.forEach((marker) => {
+          applyMarkerColor(marker, marker.dataset.color || getDefaultMarkerColor(marker), false);
+        });
+      }
+
+      function collectMarkerPositions() {
+        return markers.map((marker) => ({
+          x: parseFloat(marker.dataset.x),
+          y: parseFloat(marker.dataset.y),
+        }));
+      }
+
+      function applyMarkerPositions(positionSet) {
+        positionSet.forEach((position, index) => {
+          const marker = markers[index];
+          if (!marker || !position) return;
+          positionMarker(marker, position.x, position.y);
+        });
+      }
+
+      function renderSavedPositions() {
+        if (!savedList) return;
+        savedList.innerHTML = "";
+
+        savedPositions.forEach((position, index) => {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.textContent = position.name;
+          button.addEventListener("click", () => {
+            applyMarkerPositions(position.markers);
+          });
+          button.setAttribute("role", "listitem");
+          button.dataset.index = String(index);
+          savedList.appendChild(button);
+        });
+      }
+
+      function saveCurrentPosition() {
+        const fallbackName = `Position ${savedPositions.length + 1}`;
+        const name = saveNameInput?.value.trim() || fallbackName;
+        savedPositions.push({
+          name,
+          markers: collectMarkerPositions(),
+        });
+        if (saveNameInput) saveNameInput.value = "";
+        renderSavedPositions();
+      }
+
+
       // ---- Background presets (inline SVG data URLs) ----
       const bgPresets = {
         grid: null,
@@ -779,103 +1131,7 @@
         field.style.backgroundImage = bgPresets[key] || "none";
       }
 
-      // ---- Arrow placement ----
-      function createArrowElement(preset, xPercent, yPercent, color) {
-        const el = document.createElement("div");
-        el.className = "arrow";
-        el.dataset.x = xPercent.toFixed(2);
-        el.dataset.y = yPercent.toFixed(2);
-        el.dataset.preset = preset;
-        el.style.left = `${xPercent}%`;
-        el.style.top = `${yPercent}%`;
-        el.style.setProperty("--arrow-color", color);
-
-        const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-        svg.setAttribute("viewBox", "0 0 120 48");
-        svg.setAttribute("aria-hidden", "true");
-
-        svg.innerHTML = `
-          <path class="stroke" d="M10 24 H86" />
-          <path class="fill" d="M86 10 L114 24 L86 38 Z" />
-        `;
-
-        el.appendChild(svg);
-
-        el.addEventListener("pointerdown", onArrowPointerDown);
-        el.addEventListener("pointermove", onArrowPointerMove);
-        el.addEventListener("pointerup", endArrowDrag);
-        el.addEventListener("pointercancel", endArrowDrag);
-
-        return el;
-      }
-
-      function positionArrow(el, xPercent, yPercent) {
-        el.style.left = `${xPercent}%`;
-        el.style.top = `${yPercent}%`;
-        el.dataset.x = xPercent.toFixed(2);
-        el.dataset.y = yPercent.toFixed(2);
-      }
-
-      function onArrowPointerDown(event) {
-        if (mode !== "move") return;
-        event.preventDefault();
-        activeArrow = event.currentTarget;
-        activePointerId = event.pointerId;
-
-        const rect = field.getBoundingClientRect();
-        const pointerPercents = pointerPercentages(event, rect);
-        const x = parseFloat(activeArrow.dataset.x);
-        const y = parseFloat(activeArrow.dataset.y);
-
-        pointerOffset = {
-          x: pointerPercents.x - x,
-          y: pointerPercents.y - y,
-        };
-
-        activeArrow.setPointerCapture(activePointerId);
-      }
-
-      function onArrowPointerMove(event) {
-        if (!activeArrow || event.pointerId !== activePointerId) return;
-
-        const rect = field.getBoundingClientRect();
-        const { x, y } = pointerPercentages(event, rect);
-
-        const halfW = ((activeArrow.offsetWidth / 2) / rect.width) * 100;
-        const halfH = ((activeArrow.offsetHeight / 2) / rect.height) * 100;
-
-        const targetX = clamp(x - pointerOffset.x, halfW, 100 - halfW);
-        const targetY = clamp(y - pointerOffset.y, halfH, 100 - halfH);
-
-        positionArrow(activeArrow, targetX, targetY);
-      }
-
-      function endArrowDrag(event) {
-        if (event.pointerId !== activePointerId) return;
-        activeArrow?.releasePointerCapture(activePointerId);
-        activeArrow = null;
-        activePointerId = null;
-      }
-
-      function placeArrowAt(event) {
-        if (mode !== "arrow") return;
-        if (event.button !== 0) return;
-
-        event.preventDefault();
-        const rect = field.getBoundingClientRect();
-        const { x, y } = pointerPercentages(event, rect);
-
-        const arrow = createArrowElement(arrowPreset, x, y, colorPicker.value);
-        field.appendChild(arrow);
-
-        // clamp based on real size after append
-        const halfW = ((arrow.offsetWidth / 2) / rect.width) * 100;
-        const halfH = ((arrow.offsetHeight / 2) / rect.height) * 100;
-        positionArrow(arrow, clamp(x, halfW, 100 - halfW), clamp(y, halfH, 100 - halfH));
-
-        // in arrow mode, arrows should not be draggable
-        arrow.style.pointerEvents = "none";
-      }
+     
 
       // ---- Event listeners ----
       field.addEventListener("contextmenu", (e) => e.preventDefault());
@@ -897,7 +1153,7 @@
 
       field.addEventListener("pointerdown", (event) => {
         if (mode === "draw") startDrawing(event);
-        if (mode === "arrow") placeArrowAt(event);
+      
       });
 
       field.addEventListener("pointermove", draw);
@@ -920,28 +1176,44 @@
         toggleCenterDotButton.setAttribute("aria-pressed", String(!isHidden));
       });
 
+      if (settingsToggle && settingsDrawer) {
+        settingsToggle.addEventListener("click", () => {
+          const isExpanded = settingsToggle.getAttribute("aria-expanded") === "true";
+          settingsToggle.setAttribute("aria-expanded", String(!isExpanded));
+          settingsDrawer.hidden = isExpanded;
+        });
+      }
+
+      if (savePositionButton) {
+        savePositionButton.addEventListener("click", saveCurrentPosition);
+      }
+
       window.addEventListener("resize", () => {
         resizeCanvas();
         refreshMarkerPositions();
         refreshCenterDotPosition();
         refreshConnectorPositions();
 
-        const rect = field.getBoundingClientRect();
-        Array.from(field.querySelectorAll(".arrow")).forEach((arrow) => {
-          const x = parseFloat(arrow.dataset.x);
-          const y = parseFloat(arrow.dataset.y);
-          const halfW = ((arrow.offsetWidth / 2) / rect.width) * 100;
-          const halfH = ((arrow.offsetHeight / 2) / rect.height) * 100;
-          positionArrow(arrow, clamp(x, halfW, 100 - halfW), clamp(y, halfH, 100 - halfH));
-        });
+        
       });
 
       // init
       resizeCanvas();
+      initializeMarkerColors();
+      buildMarkerSettings();
       refreshMarkerPositions();
       refreshCenterDotPosition();
       refreshConnectorPositions();
       applyBackgroundPreset(backgroundSelect.value);
+
+      const splashScreen = document.getElementById("splashScreen");
+      if (splashScreen) {
+        splashScreen.addEventListener("animationend", (event) => {
+          if (event.animationName !== "splash-fade-out") return;
+          splashScreen.remove();
+          document.body.classList.remove("is-loading");
+        });
+      }
     </script>
   </body>
 </html>
