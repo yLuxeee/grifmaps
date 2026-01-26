@@ -9,6 +9,15 @@
         color-scheme: light dark;
         font-family: "Inter", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont,
           sans-serif;
+        --app-bg: radial-gradient(circle at top left, #edf2f7, #c3dafe);
+        --toolbar-bg: linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(241, 245, 249, 0.9));
+        --toolbar-text: #0f172a;
+        --panel-bg: rgba(255, 255, 255, 0.9);
+        --panel-border: rgba(148, 163, 184, 0.35);
+        --hint-bg: rgba(226, 232, 240, 0.6);
+        --field-border: rgba(15, 23, 42, 0.85);
+        --field-bg: #d4d4d8;
+        --goal-outline: rgba(15, 23, 42, 0.35);
       }
 
       * {
@@ -21,8 +30,21 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        background: radial-gradient(circle at top left, #edf2f7, #c3dafe);
+        background: var(--app-bg);
         padding: clamp(16px, 3vw, 32px);
+        color: var(--toolbar-text);
+      }
+
+      body.dark {
+        --app-bg: radial-gradient(circle at top left, #0f172a, #1e293b);
+        --toolbar-bg: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9));
+        --toolbar-text: #e2e8f0;
+        --panel-bg: rgba(15, 23, 42, 0.9);
+        --panel-border: rgba(148, 163, 184, 0.2);
+        --hint-bg: rgba(30, 41, 59, 0.75);
+        --field-border: rgba(226, 232, 240, 0.65);
+        --field-bg: #1f2937;
+        --goal-outline: rgba(148, 163, 184, 0.6);
       }
 
        body.is-loading {
@@ -44,17 +66,16 @@
         gap: 14px;
         padding: 14px 18px;
         border-radius: 20px;
-        background:
-          linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(241, 245, 249, 0.9));
+        background: var(--toolbar-bg);
         box-shadow: 0 24px 50px rgba(15, 23, 42, 0.18);
-        border: 1px solid rgba(148, 163, 184, 0.35);
+        border: 1px solid var(--panel-border);
         backdrop-filter: blur(10px);
       }
 
       .toolbar h1 {
         font-size: 1.1rem;
         font-weight: 600;
-        color: #0f172a;
+        color: var(--toolbar-text);
         margin: 0 12px 0 0;
       }
 
@@ -72,7 +93,7 @@
         border-radius: 999px;
         border: 1px solid rgba(148, 163, 184, 0.4);
         background: rgba(226, 232, 240, 0.7);
-        color: #0f172a;
+        color: var(--toolbar-text);
         cursor: pointer;
         transition: background 0.2s ease;
         font-weight: 600;
@@ -109,7 +130,7 @@
         border-radius: 999px;
         border: 1px solid rgba(203, 213, 225, 0.7);
         background: rgba(248, 250, 252, 0.9);
-        color: #0f172a;
+        color: var(--toolbar-text);
         font-weight: 600;
         cursor: pointer;
       }
@@ -131,8 +152,8 @@
         width: var(--field-width);
         height: min(calc(var(--field-width) / 1.12), 820px);
         border-radius: 28px;
-        border: 10px solid rgba(15, 23, 42, 0.85);
-        background-color: #d4d4d8;
+        border: 10px solid var(--field-border);
+        background-color: var(--field-bg);
 
         /* Default grid */
         background-image:
@@ -165,9 +186,7 @@
       .field canvas,
       .connector-layer,
       .goal-point,
-      .marker,
-      
-      .mini-dot {
+      .marker {
         position: absolute;
       }
 
@@ -179,7 +198,7 @@
       }
 
       .connector-layer line {
-        stroke-width: 1.6;
+        stroke-width: 2.4;
         stroke-linecap: round;
         opacity: 0.75;
       }
@@ -224,24 +243,46 @@
         color: #92400e;
       }
 
-      .field.moving .marker:active,
-      .field.moving .mini-dot:active {
+      .field.moving .marker:active {
         transform: translate(-50%, -50%) scale(1.05);
       }
 
-      .field.drawing-mode .mini-dot {
-        pointer-events: none;
-        opacity: 0.85;
-      }
-
       .goal-point {
-        width: 6px;
-        height: 6px;
+        width: 18px;
+        height: 18px;
         border-radius: 50%;
         transform: translate(-50%, -50%);
         pointer-events: none;
-        opacity: 0.4;
-        box-shadow: 0 0 6px rgba(15, 23, 42, 0.45);
+        opacity: 0.85;
+        box-shadow: 0 0 12px rgba(15, 23, 42, 0.45);
+        border: 2px solid var(--goal-outline);
+      }
+
+      .goal-point::before {
+        content: "";
+        position: absolute;
+        inset: 4px;
+        border-radius: 50%;
+        background: #f8fafc;
+        opacity: 0.85;
+      }
+
+      .goal-point::after {
+        content: attr(data-label);
+        position: absolute;
+        top: -6px;
+        left: 50%;
+        transform: translate(-50%, -100%);
+        padding: 2px 8px;
+        border-radius: 999px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 0.03em;
+        background: var(--panel-bg);
+        color: var(--toolbar-text);
+        border: 1px solid var(--panel-border);
+        text-transform: uppercase;
+        white-space: nowrap;
       }
 
       .goal-point.red {
@@ -254,21 +295,7 @@
 
      
 
-      .mini-dot {
-        width: calc(var(--dot-size) * 0.45);
-        aspect-ratio: 1 / 1;
-        border-radius: 50%;
-        transform: translate(-50%, -50%);
-        background: radial-gradient(circle at 30% 30%, #f8fafc, #0f172a 70%);
-        box-shadow: 0 6px 12px rgba(15, 23, 42, 0.35);
-        cursor: pointer;
-        user-select: none;
-        touch-action: none;
-      }
-
-      .mini-dot.is-hidden {
-        display: none;
-      }
+      
 
       .marker.is-hidden {
         display: none;
@@ -277,17 +304,17 @@
       .hint {
         margin-left: auto;
         font-size: 0.85rem;
-        color: #334155;
+        color: var(--toolbar-text);
         font-weight: 600;
         opacity: 0.9;
         padding: 6px 10px;
         border-radius: 999px;
-        background: rgba(226, 232, 240, 0.6);
+        background: var(--hint-bg);
         border: 1px solid rgba(203, 213, 225, 0.7);
       }
 
       .settings-panel {
-        background: rgba(255, 255, 255, 0.9);
+        background: var(--panel-bg);
         border-radius: 18px;
         padding: 12px;
         box-shadow: 0 18px 32px rgba(15, 23, 42, 0.2);
@@ -301,7 +328,7 @@
       }
 
       .saved-panel {
-        background: rgba(255, 255, 255, 0.9);
+        background: var(--panel-bg);
         border-radius: 18px;
         padding: 12px;
         box-shadow: 0 18px 32px rgba(15, 23, 42, 0.2);
@@ -337,7 +364,7 @@
       .settings-drawer h2 {
         font-size: 0.95rem;
         margin: 0;
-        color: #0f172a;
+        color: var(--toolbar-text);
       }
 
       .settings-list {
@@ -350,13 +377,13 @@
         gap: 8px;
         padding: 10px;
         border-radius: 14px;
-        background: #f8fafc;
+        background: rgba(248, 250, 252, 0.9);
         border: 1px solid #e2e8f0;
       }
 
       .settings-item label {
         font-size: 0.85rem;
-        color: #334155;
+        color: var(--toolbar-text);
         font-weight: 600;
         display: grid;
         gap: 6px;
@@ -393,7 +420,7 @@
       .saved-panel h2 {
         font-size: 0.95rem;
         margin: 0;
-        color: #0f172a;
+        color: var(--toolbar-text);
       }
 
       .saved-panel input[type="text"] {
@@ -402,6 +429,18 @@
         padding: 8px 10px;
         font-weight: 600;
         width: 100%;
+      }
+
+      body.dark .settings-item {
+        background: rgba(30, 41, 59, 0.85);
+        border-color: rgba(148, 163, 184, 0.25);
+      }
+
+      body.dark .settings-item input[type="text"],
+      body.dark .saved-panel input[type="text"] {
+        background: rgba(15, 23, 42, 0.6);
+        border-color: rgba(148, 163, 184, 0.3);
+        color: #e2e8f0;
       }
 
       .saved-panel button {
@@ -550,7 +589,8 @@
         </select>
 
         
-
+        <button type="button" id="darkModeToggle" aria-pressed="false">Dark Mode</button>
+        <button type="button" id="downloadPng">Download PNG</button>
         <button type="button" id="clearCanvas">Clear Drawing</button>
 
         <span class="hint">Tip: Right-click a marker to toggle its goal line.</span>
@@ -584,8 +624,8 @@
 
             <svg class="connector-layer" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"></svg>
 
-            <div class="goal-point red" data-goal="red" data-x="10" data-y="50" style="left: 10%; top: 50%;" aria-hidden="true"></div>
-            <div class="goal-point blue" data-goal="blue" data-x="90" data-y="50" style="left: 90%; top: 50%;" aria-hidden="true"></div>
+            <div class="goal-point red" data-label="Goal" data-goal="red" data-x="10" data-y="50" style="left: 10%; top: 50%;" aria-hidden="true"></div>
+            <div class="goal-point blue" data-label="Goal" data-goal="blue" data-x="90" data-y="50" style="left: 90%; top: 50%;" aria-hidden="true"></div>
 
             <div class="marker red" data-label="R1" data-x="18" data-y="22" role="button"></div>
             <div class="marker red" data-label="R2" data-x="32" data-y="68" role="button"></div>
@@ -597,7 +637,7 @@
             <div class="marker blue" data-label="B3" data-x="54" data-y="60" role="button"></div>
             <div class="marker blue" data-label="B4" data-x="40" data-y="84" role="button"></div>
 
-            <div class="mini-dot" id="centerDot" data-x="50" data-y="50" role="button" aria-label="Center dot"></div>
+            
           </section>
         </div>
       </div>
@@ -611,11 +651,13 @@
       const clearButton = document.getElementById("clearCanvas");
       const dotSizeControl = document.getElementById("dotSize");
       const restoreDotsButton = document.getElementById("restoreDots");
+      const darkModeToggle = document.getElementById("darkModeToggle");
+      const downloadButton = document.getElementById("downloadPng");
       const modeButtons = document.querySelectorAll("[data-mode]");
       const backgroundSelect = document.getElementById("backgroundSelect");
 
       const markers = Array.from(document.querySelectorAll(".marker"));
-      const centerDot = document.getElementById("centerDot");
+      
       const connectorLayer = field.querySelector(".connector-layer");
       const markerConnections = new Map();
       const settingsToggle = document.getElementById("settingsToggle");
@@ -634,7 +676,7 @@
       let mode = "move";
       let activeMarker = null;
       
-      let activeCenterDot = null;
+      
       let activePointerId = null;
       let pointerOffset = { x: 0, y: 0 };
       let isDrawing = false;
@@ -690,20 +732,7 @@
         });
       }
 
-      function positionCenterDot(xPercent, yPercent) {
-        if (!centerDot) return;
-        centerDot.style.left = `${xPercent}%`;
-        centerDot.style.top = `${yPercent}%`;
-        centerDot.dataset.x = xPercent.toFixed(2);
-        centerDot.dataset.y = yPercent.toFixed(2);
-      }
-
-      function refreshCenterDotPosition() {
-        if (!centerDot) return;
-        const x = parseFloat(centerDot.dataset.x);
-        const y = parseFloat(centerDot.dataset.y);
-        positionCenterDot(x, y);
-      }
+      
 
       function getMarkerGoalKey(marker) {
         if (marker.classList.contains("red")) return "red";
@@ -766,13 +795,7 @@
       function getCurrentState() {
         return {
           markers: markers.map((marker) => getMarkerState(marker)),
-          centerDot: centerDot
-            ? {
-                x: parseFloat(centerDot.dataset.x),
-                y: parseFloat(centerDot.dataset.y),
-                hidden: centerDot.classList.contains("is-hidden"),
-              }
-            : null,
+          
         };
       }
 
@@ -800,10 +823,7 @@
           if (!marker) return;
           applyMarkerState(marker, markerState);
         });
-        if (centerDot && state.centerDot) {
-          positionCenterDot(state.centerDot.x, state.centerDot.y);
-          centerDot.classList.toggle("is-hidden", Boolean(state.centerDot.hidden));
-        }
+        
         buildMarkerSettings();
         refreshConnectorPositions();
       }
@@ -837,6 +857,131 @@
         field.style.setProperty("--dot-size", `${clamped}px`);
       }
 
+      function setDarkMode(isDark) {
+        document.body.classList.toggle("dark", isDark);
+        if (darkModeToggle) {
+          darkModeToggle.setAttribute("aria-pressed", String(isDark));
+        }
+      }
+
+      function getDotSizePixels() {
+        const size = parseFloat(getComputedStyle(field).getPropertyValue("--dot-size"));
+        return Number.isNaN(size) ? 52 : size;
+      }
+
+      function drawGridBackground(ctx2d, width, height) {
+        const styles = getComputedStyle(field);
+        ctx2d.fillStyle = styles.backgroundColor || "#d4d4d8";
+        ctx2d.fillRect(0, 0, width, height);
+
+        ctx2d.strokeStyle = "rgba(107, 114, 128, 0.25)";
+        ctx2d.lineWidth = 1;
+        const spacing = 72;
+        for (let x = 0; x <= width; x += spacing) {
+          ctx2d.beginPath();
+          ctx2d.moveTo(x, 0);
+          ctx2d.lineTo(x, height);
+          ctx2d.stroke();
+        }
+        for (let y = 0; y <= height; y += spacing) {
+          ctx2d.beginPath();
+          ctx2d.moveTo(0, y);
+          ctx2d.lineTo(width, y);
+          ctx2d.stroke();
+        }
+      }
+
+      function loadImage(src) {
+        return new Promise((resolve, reject) => {
+          const image = new Image();
+          image.onload = () => resolve(image);
+          image.onerror = reject;
+          image.src = src;
+        });
+      }
+
+      async function renderSnapshot() {
+        const rect = field.getBoundingClientRect();
+        const dpr = window.devicePixelRatio || 1;
+        const exportCanvas = document.createElement("canvas");
+        exportCanvas.width = Math.round(rect.width * dpr);
+        exportCanvas.height = Math.round(rect.height * dpr);
+        const exportCtx = exportCanvas.getContext("2d");
+        exportCtx.scale(dpr, dpr);
+
+        if (backgroundSelect.value === "grid") {
+          drawGridBackground(exportCtx, rect.width, rect.height);
+        } else {
+          const bg = bgPresets[backgroundSelect.value];
+          if (bg) {
+            const image = await loadImage(bg.slice(5, -2));
+            exportCtx.drawImage(image, 0, 0, rect.width, rect.height);
+          } else {
+            drawGridBackground(exportCtx, rect.width, rect.height);
+          }
+        }
+
+        exportCtx.drawImage(canvas, 0, 0, rect.width, rect.height);
+
+        markers.forEach((marker) => {
+          if (marker.classList.contains("is-hidden")) return;
+          if (!marker.classList.contains("highlight")) return;
+          const goalKey = getMarkerGoalKey(marker);
+          const goalPoint = goalKey ? goalTargets[goalKey] : null;
+          if (!goalPoint) return;
+          const markerX = (parseFloat(marker.dataset.x) / 100) * rect.width;
+          const markerY = (parseFloat(marker.dataset.y) / 100) * rect.height;
+          const goalX = (parseFloat(goalPoint.dataset.x) / 100) * rect.width;
+          const goalY = (parseFloat(goalPoint.dataset.y) / 100) * rect.height;
+          exportCtx.strokeStyle = marker.dataset.color || getDefaultMarkerColor(marker);
+          exportCtx.lineWidth = 2.4;
+          exportCtx.beginPath();
+          exportCtx.moveTo(markerX, markerY);
+          exportCtx.lineTo(goalX, goalY);
+          exportCtx.stroke();
+        });
+
+        const dotSize = getDotSizePixels();
+        markers.forEach((marker, index) => {
+          if (marker.classList.contains("is-hidden")) return;
+          const markerX = (parseFloat(marker.dataset.x) / 100) * rect.width;
+          const markerY = (parseFloat(marker.dataset.y) / 100) * rect.height;
+          const color = marker.dataset.color || getDefaultMarkerColor(marker);
+          exportCtx.fillStyle = color;
+          exportCtx.beginPath();
+          exportCtx.arc(markerX, markerY, dotSize / 2, 0, Math.PI * 2);
+          exportCtx.fill();
+
+          const label = marker.dataset.label || `Dot ${index + 1}`;
+          exportCtx.fillStyle = getReadableTextColor(color);
+          exportCtx.font = `${Math.max(12, dotSize * 0.3)}px "Inter", system-ui, sans-serif`;
+          exportCtx.textAlign = "center";
+          exportCtx.textBaseline = "middle";
+          exportCtx.fillText(label, markerX, markerY);
+        });
+
+        Object.values(goalTargets).forEach((goalPoint) => {
+          const goalX = (parseFloat(goalPoint.dataset.x) / 100) * rect.width;
+          const goalY = (parseFloat(goalPoint.dataset.y) / 100) * rect.height;
+          const goalColor = goalPoint.classList.contains("red") ? "#ef4444" : "#3b82f6";
+          exportCtx.fillStyle = goalColor;
+          exportCtx.beginPath();
+          exportCtx.arc(goalX, goalY, 9, 0, Math.PI * 2);
+          exportCtx.fill();
+          exportCtx.strokeStyle = getComputedStyle(goalPoint).borderColor || "rgba(15, 23, 42, 0.35)";
+          exportCtx.lineWidth = 2;
+          exportCtx.stroke();
+
+          exportCtx.fillStyle = getComputedStyle(document.body).color || "#0f172a";
+          exportCtx.font = "11px \"Inter\", system-ui, sans-serif";
+          exportCtx.textAlign = "center";
+          exportCtx.textBaseline = "bottom";
+          exportCtx.fillText("GOAL", goalX, goalY - 12);
+        });
+
+        return exportCanvas;
+      }
+
       function setMode(newMode) {
         mode = newMode;
 
@@ -854,9 +999,7 @@
           marker.style.pointerEvents = newMode === "move" ? "auto" : "none";
         });
 
-        if (centerDot) {
-          centerDot.style.pointerEvents = newMode === "move" ? "auto" : "none";
-        }
+      
 
         
       }
@@ -926,58 +1069,7 @@
         dragStartPosition = null;
       }
 
-      function onCenterDotPointerDown(event) {
-        if (mode !== "move") return;
-        event.preventDefault();
-
-        activeCenterDot = event.currentTarget;
-        activePointerId = event.pointerId;
-
-        const rect = field.getBoundingClientRect();
-        const pointerPercents = pointerPercentages(event, rect);
-        const dotX = parseFloat(activeCenterDot.dataset.x);
-        const dotY = parseFloat(activeCenterDot.dataset.y);
-
-        pointerOffset = {
-          x: pointerPercents.x - dotX,
-          y: pointerPercents.y - dotY,
-        };
-
-        dragStartState = getCurrentState();
-        dragStartPosition = { x: dotX, y: dotY };
-
-        activeCenterDot.setPointerCapture(activePointerId);
-      }
-
-      function onCenterDotPointerMove(event) {
-        if (!activeCenterDot || event.pointerId !== activePointerId) return;
-
-        const rect = field.getBoundingClientRect();
-        const { x, y } = pointerPercentages(event, rect);
-        const halfW = ((activeCenterDot.offsetWidth / 2) / rect.width) * 100;
-        const halfH = ((activeCenterDot.offsetHeight / 2) / rect.height) * 100;
-
-        const targetX = clamp(x - pointerOffset.x, halfW, 100 - halfW);
-        const targetY = clamp(y - pointerOffset.y, halfH, 100 - halfH);
-
-        positionCenterDot(targetX, targetY);
-      }
-
-      function endCenterDotDrag(event) {
-        if (event.pointerId !== activePointerId) return;
-        activeCenterDot?.releasePointerCapture(activePointerId);
-        if (activeCenterDot && dragStartState && dragStartPosition) {
-          const currentX = parseFloat(activeCenterDot.dataset.x);
-          const currentY = parseFloat(activeCenterDot.dataset.y);
-          if (currentX !== dragStartPosition.x || currentY !== dragStartPosition.y) {
-            pushHistory(dragStartState);
-          }
-        }
-        activeCenterDot = null;
-        activePointerId = null;
-        dragStartState = null;
-        dragStartPosition = null;
-      }
+     
 
       function startDrawing(event) {
         if (mode !== "draw") return;
@@ -1268,7 +1360,7 @@
       function applyBackgroundPreset(key) {
         if (key === "grid") {
           field.classList.remove("canvas-bg");
-          field.style.backgroundColor = "#d4d4d8";
+          field.style.backgroundColor = "var(--field-bg)";
           field.style.backgroundImage =
             "linear-gradient(90deg, rgba(107, 114, 128, 0.25) 0, rgba(107, 114, 128, 0.25) 1px, transparent 1px, transparent 72px), " +
             "linear-gradient(180deg, rgba(107, 114, 128, 0.25) 0, rgba(107, 114, 128, 0.25) 1px, transparent 1px, transparent 72px)";
@@ -1296,12 +1388,7 @@
         marker.addEventListener("pointercancel", endMarkerDrag);
       });
 
-      if (centerDot) {
-        centerDot.addEventListener("pointerdown", onCenterDotPointerDown);
-        centerDot.addEventListener("pointermove", onCenterDotPointerMove);
-        centerDot.addEventListener("pointerup", endCenterDotDrag);
-        centerDot.addEventListener("pointercancel", endCenterDotDrag);
-      }
+      
 
       field.addEventListener("pointerdown", (event) => {
         if (mode === "draw") startDrawing(event);
@@ -1335,6 +1422,22 @@
       if (dotSizeControl) {
         dotSizeControl.addEventListener("input", () => {
           handleDotSizeChange(dotSizeControl.value);
+        });
+      }
+
+      if (darkModeToggle) {
+        darkModeToggle.addEventListener("click", () => {
+          setDarkMode(!document.body.classList.contains("dark"));
+        });
+      }
+
+      if (downloadButton) {
+        downloadButton.addEventListener("click", async () => {
+          const snapshot = await renderSnapshot();
+          const link = document.createElement("a");
+          link.download = `grifmaps-${Date.now()}.png`;
+          link.href = snapshot.toDataURL("image/png");
+          link.click();
         });
       }
 
@@ -1383,7 +1486,7 @@
       window.addEventListener("resize", () => {
         resizeCanvas();
         refreshMarkerPositions();
-        refreshCenterDotPosition();
+        
         refreshConnectorPositions();
 
         
@@ -1395,9 +1498,12 @@
       if (dotSizeControl) {
         handleDotSizeChange(dotSizeControl.value);
       }
+      if (window.matchMedia) {
+        setDarkMode(window.matchMedia("(prefers-color-scheme: dark)").matches);
+      }
       buildMarkerSettings();
       refreshMarkerPositions();
-      refreshCenterDotPosition();
+      
       refreshConnectorPositions();
       applyBackgroundPreset(backgroundSelect.value);
 
