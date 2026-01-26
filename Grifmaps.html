@@ -127,6 +127,7 @@
       .field {
         position: relative;
         --field-width: min(96vw, 1152px);
+        --dot-size: 52px;
         width: var(--field-width);
         height: min(calc(var(--field-width) / 1.12), 820px);
         border-radius: 28px;
@@ -192,7 +193,7 @@
       }
 
       .marker {
-        width: clamp(40px, 7vmin, 64px);
+        width: var(--dot-size);
         aspect-ratio: 1 / 1;
         border-radius: 50%;
         transform: translate(-50%, -50%);
@@ -254,7 +255,7 @@
      
 
       .mini-dot {
-        width: clamp(16px, 3vmin, 24px);
+        width: calc(var(--dot-size) * 0.45);
         aspect-ratio: 1 / 1;
         border-radius: 50%;
         transform: translate(-50%, -50%);
@@ -266,6 +267,10 @@
       }
 
       .mini-dot.is-hidden {
+        display: none;
+      }
+
+      .marker.is-hidden {
         display: none;
       }
 
@@ -371,6 +376,17 @@
         border: 1px solid #cbd5e1;
         padding: 0;
         background: none;
+        cursor: pointer;
+      }
+
+      .settings-item button,
+      #restoreDots {
+        padding: 8px 12px;
+        border-radius: 999px;
+        border: 1px solid rgba(148, 163, 184, 0.6);
+        background: rgba(248, 250, 252, 0.9);
+        color: #0f172a;
+        font-weight: 600;
         cursor: pointer;
       }
 
@@ -533,7 +549,7 @@
           <option value="chalk">Chalkboard</option>
         </select>
 
-        <button type="button" id="toggleCenterDot" aria-pressed="true">Toggle Ball</button>
+        
 
         <button type="button" id="clearCanvas">Clear Drawing</button>
 
@@ -544,11 +560,16 @@
         <div class="field-stage">
           <aside class="settings-panel" aria-label="Marker settings">
             <button type="button" class="settings-toggle" id="settingsToggle" aria-expanded="true">
-              Marker Settings
+              Settings
             </button>
             <div class="settings-drawer" id="settingsDrawer">
-              <h2>Rename &amp; recolor dots</h2>
+              <h2>Dot controls</h2>
+              <div class="settings-item">
+                <label for="dotSize">Dot size</label>
+                <input type="range" id="dotSize" min="28" max="90" value="52" />
+              </div>
               <div class="settings-list" id="settingsList"></div>
+              <button type="button" id="restoreDots">Restore all dots</button>
             </div>
           </aside>
           <aside class="saved-panel" aria-label="Saved positions">
@@ -588,7 +609,8 @@
       const colorPicker = document.getElementById("colorPicker");
       const brushSizeControl = document.getElementById("brushSize");
       const clearButton = document.getElementById("clearCanvas");
-      const toggleCenterDotButton = document.getElementById("toggleCenterDot");
+      const dotSizeControl = document.getElementById("dotSize");
+      const restoreDotsButton = document.getElementById("restoreDots");
       const modeButtons = document.querySelectorAll("[data-mode]");
       const backgroundSelect = document.getElementById("backgroundSelect");
 
@@ -618,6 +640,12 @@
       let isDrawing = false;
       let lastPoint = null;
       const savedPositions = [];
+      const history = {
+        past: [],
+        future: [],
+      };
+      let dragStartState = null;
+      let dragStartPosition = null;
 
       
 
@@ -725,6 +753,90 @@
         markers.forEach(updateConnector);
       }
 
+      function getMarkerState(marker) {
+        return {
+          x: parseFloat(marker.dataset.x),
+          y: parseFloat(marker.dataset.y),
+          hidden: marker.classList.contains("is-hidden"),
+          label: marker.dataset.label || "",
+          color: marker.dataset.color || "",
+        };
+      }
+
+      function getCurrentState() {
+        return {
+          markers: markers.map((marker) => getMarkerState(marker)),
+          centerDot: centerDot
+            ? {
+                x: parseFloat(centerDot.dataset.x),
+                y: parseFloat(centerDot.dataset.y),
+                hidden: centerDot.classList.contains("is-hidden"),
+              }
+            : null,
+        };
+      }
+
+      function applyMarkerState(marker, state) {
+        if (!state) return;
+        positionMarker(marker, state.x, state.y);
+        marker.classList.toggle("is-hidden", Boolean(state.hidden));
+        marker.dataset.label = state.label || "";
+        if (state.color) {
+          applyMarkerColor(marker, state.color);
+        } else {
+          applyMarkerColor(marker, getDefaultMarkerColor(marker));
+        }
+        if (marker.classList.contains("is-hidden")) {
+          removeConnector(marker);
+        } else if (marker.classList.contains("highlight")) {
+          createConnector(marker);
+        }
+      }
+
+      function applyState(state) {
+        if (!state) return;
+        state.markers.forEach((markerState, index) => {
+          const marker = markers[index];
+          if (!marker) return;
+          applyMarkerState(marker, markerState);
+        });
+        if (centerDot && state.centerDot) {
+          positionCenterDot(state.centerDot.x, state.centerDot.y);
+          centerDot.classList.toggle("is-hidden", Boolean(state.centerDot.hidden));
+        }
+        buildMarkerSettings();
+        refreshConnectorPositions();
+      }
+
+      function pushHistory(snapshot) {
+        history.past.push(snapshot);
+        if (history.past.length > 100) {
+          history.past.shift();
+        }
+        history.future = [];
+      }
+
+      function undo() {
+        if (history.past.length === 0) return;
+        const current = getCurrentState();
+        const previous = history.past.pop();
+        history.future.push(current);
+        applyState(previous);
+      }
+
+      function redo() {
+        if (history.future.length === 0) return;
+        const current = getCurrentState();
+        const next = history.future.pop();
+        history.past.push(current);
+        applyState(next);
+      }
+
+      function handleDotSizeChange(value) {
+        const clamped = clamp(parseFloat(value), 28, 90);
+        field.style.setProperty("--dot-size", `${clamped}px`);
+      }
+
       function setMode(newMode) {
         mode = newMode;
 
@@ -778,6 +890,9 @@
           y: pointerPercents.y - markerY,
         };
 
+        dragStartState = getCurrentState();
+        dragStartPosition = { x: markerX, y: markerY };
+
         activeMarker.setPointerCapture(activePointerId);
       }
 
@@ -798,8 +913,17 @@
       function endMarkerDrag(event) {
         if (event.pointerId !== activePointerId) return;
         activeMarker?.releasePointerCapture(activePointerId);
+        if (activeMarker && dragStartState && dragStartPosition) {
+          const currentX = parseFloat(activeMarker.dataset.x);
+          const currentY = parseFloat(activeMarker.dataset.y);
+          if (currentX !== dragStartPosition.x || currentY !== dragStartPosition.y) {
+            pushHistory(dragStartState);
+          }
+        }
         activeMarker = null;
         activePointerId = null;
+        dragStartState = null;
+        dragStartPosition = null;
       }
 
       function onCenterDotPointerDown(event) {
@@ -818,6 +942,9 @@
           x: pointerPercents.x - dotX,
           y: pointerPercents.y - dotY,
         };
+
+        dragStartState = getCurrentState();
+        dragStartPosition = { x: dotX, y: dotY };
 
         activeCenterDot.setPointerCapture(activePointerId);
       }
@@ -839,8 +966,17 @@
       function endCenterDotDrag(event) {
         if (event.pointerId !== activePointerId) return;
         activeCenterDot?.releasePointerCapture(activePointerId);
+        if (activeCenterDot && dragStartState && dragStartPosition) {
+          const currentX = parseFloat(activeCenterDot.dataset.x);
+          const currentY = parseFloat(activeCenterDot.dataset.y);
+          if (currentX !== dragStartPosition.x || currentY !== dragStartPosition.y) {
+            pushHistory(dragStartState);
+          }
+        }
         activeCenterDot = null;
         activePointerId = null;
+        dragStartState = null;
+        dragStartPosition = null;
       }
 
       function startDrawing(event) {
@@ -970,8 +1106,24 @@
 
           colorLabel.appendChild(colorInput);
 
+          const toggleButton = document.createElement("button");
+          toggleButton.type = "button";
+          toggleButton.textContent = marker.classList.contains("is-hidden") ? "Restore dot" : "Delete dot";
+          toggleButton.addEventListener("click", () => {
+            const snapshot = getCurrentState();
+            marker.classList.toggle("is-hidden");
+            if (marker.classList.contains("is-hidden")) {
+              removeConnector(marker);
+            } else if (marker.classList.contains("highlight")) {
+              createConnector(marker);
+            }
+            toggleButton.textContent = marker.classList.contains("is-hidden") ? "Restore dot" : "Delete dot";
+            pushHistory(snapshot);
+          });
+
           wrapper.appendChild(nameLabel);
           wrapper.appendChild(colorLabel);
+          wrapper.appendChild(toggleButton);
           settingsList.appendChild(wrapper);
         });
       }
@@ -1170,11 +1322,7 @@
 
       clearButton.addEventListener("click", clearCanvas);
 
-      toggleCenterDotButton.addEventListener("click", () => {
-        if (!centerDot) return;
-        const isHidden = centerDot.classList.toggle("is-hidden");
-        toggleCenterDotButton.setAttribute("aria-pressed", String(!isHidden));
-      });
+      
 
       if (settingsToggle && settingsDrawer) {
         settingsToggle.addEventListener("click", () => {
@@ -1184,9 +1332,53 @@
         });
       }
 
+      if (dotSizeControl) {
+        dotSizeControl.addEventListener("input", () => {
+          handleDotSizeChange(dotSizeControl.value);
+        });
+      }
+
+      if (restoreDotsButton) {
+        restoreDotsButton.addEventListener("click", () => {
+          const snapshot = getCurrentState();
+          let changed = false;
+          markers.forEach((marker) => {
+            if (marker.classList.contains("is-hidden")) {
+              marker.classList.remove("is-hidden");
+              changed = true;
+              if (marker.classList.contains("highlight")) {
+                createConnector(marker);
+              }
+            }
+          });
+          if (changed) {
+            pushHistory(snapshot);
+          }
+          buildMarkerSettings();
+        });
+      }
+
       if (savePositionButton) {
         savePositionButton.addEventListener("click", saveCurrentPosition);
       }
+
+      window.addEventListener("keydown", (event) => {
+        const target = event.target;
+        const isFormField = target instanceof HTMLElement
+          && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.tagName === "SELECT" || target.isContentEditable);
+        if (isFormField) return;
+        if (!(event.ctrlKey || event.metaKey) || event.altKey) return;
+
+        const key = event.key.toLowerCase();
+        if (key === "z") {
+          event.preventDefault();
+          if (event.shiftKey) redo();
+          else undo();
+        } else if (key === "y") {
+          event.preventDefault();
+          redo();
+        }
+      });
 
       window.addEventListener("resize", () => {
         resizeCanvas();
@@ -1200,6 +1392,9 @@
       // init
       resizeCanvas();
       initializeMarkerColors();
+      if (dotSizeControl) {
+        handleDotSizeChange(dotSizeControl.value);
+      }
       buildMarkerSettings();
       refreshMarkerPositions();
       refreshCenterDotPosition();
