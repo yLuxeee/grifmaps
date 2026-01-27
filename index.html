@@ -135,6 +135,20 @@
         cursor: pointer;
       }
 
+      .toolbar option {
+        color: #0f172a;
+      }
+
+      body.dark .toolbar select {
+        background: rgba(15, 23, 42, 0.8);
+        border-color: rgba(148, 163, 184, 0.4);
+      }
+
+      body.dark .toolbar option {
+        color: #e2e8f0;
+        background: #0f172a;
+      }
+
       .field-wrapper {
         display: flex;
         justify-content: center;
@@ -325,6 +339,8 @@
         position: absolute;
         right: calc(100% + 16px);
         top: 0;
+        max-height: min(70vh, 520px);
+        overflow: hidden;
       }
 
       .saved-panel {
@@ -355,6 +371,9 @@
       .settings-drawer {
         display: grid;
         gap: 12px;
+        max-height: min(60vh, 460px);
+        overflow: auto;
+        padding-right: 4px;
       }
 
       .settings-drawer[hidden] {
@@ -369,13 +388,15 @@
 
       .settings-list {
         display: grid;
-        gap: 10px;
+        gap: 8px;
+        max-height: 260px;
+        overflow: auto;
       }
 
       .settings-item {
         display: grid;
         gap: 8px;
-        padding: 10px;
+        padding: 8px;
         border-radius: 14px;
         background: rgba(248, 250, 252, 0.9);
         border: 1px solid #e2e8f0;
@@ -415,6 +436,17 @@
         color: #0f172a;
         font-weight: 600;
         cursor: pointer;
+      }
+
+      .settings-item button {
+        justify-self: start;
+      }
+
+      .settings-drawer h2 {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
       }
 
       .saved-panel h2 {
@@ -590,6 +622,7 @@
 
         
         <button type="button" id="darkModeToggle" aria-pressed="false">Dark Mode</button>
+        <button type="button" id="quizModeToggle" aria-pressed="false">Quiz Mode</button>
         <button type="button" id="downloadPng">Download PNG</button>
         <button type="button" id="clearCanvas">Clear Drawing</button>
 
@@ -652,6 +685,7 @@
       const dotSizeControl = document.getElementById("dotSize");
       const restoreDotsButton = document.getElementById("restoreDots");
       const darkModeToggle = document.getElementById("darkModeToggle");
+      const quizModeToggle = document.getElementById("quizModeToggle");
       const downloadButton = document.getElementById("downloadPng");
       const modeButtons = document.querySelectorAll("[data-mode]");
       const backgroundSelect = document.getElementById("backgroundSelect");
@@ -862,6 +896,25 @@
         if (darkModeToggle) {
           darkModeToggle.setAttribute("aria-pressed", String(isDark));
         }
+      }
+
+      function setQuizMode(isQuizMode) {
+        if (!quizModeToggle) return;
+        quizModeToggle.setAttribute("aria-pressed", String(isQuizMode));
+        if (!isQuizMode) return;
+        const snapshot = getCurrentState();
+        let changed = false;
+        markers.forEach((marker) => {
+          if (!marker.classList.contains("is-hidden")) {
+            marker.classList.add("is-hidden");
+            removeConnector(marker);
+            changed = true;
+          }
+        });
+        if (changed) {
+          pushHistory(snapshot);
+        }
+        buildMarkerSettings();
       }
 
       function getDotSizePixels() {
@@ -1365,6 +1418,8 @@
             "linear-gradient(90deg, rgba(107, 114, 128, 0.25) 0, rgba(107, 114, 128, 0.25) 1px, transparent 1px, transparent 72px), " +
             "linear-gradient(180deg, rgba(107, 114, 128, 0.25) 0, rgba(107, 114, 128, 0.25) 1px, transparent 1px, transparent 72px)";
           field.style.backgroundSize = "72px 72px";
+          field.style.backgroundPosition = "center";
+          field.style.backgroundRepeat = "repeat";
           return;
         }
 
@@ -1428,6 +1483,12 @@
       if (darkModeToggle) {
         darkModeToggle.addEventListener("click", () => {
           setDarkMode(!document.body.classList.contains("dark"));
+        });
+      }
+
+      if (quizModeToggle) {
+        quizModeToggle.addEventListener("click", () => {
+          setQuizMode(true);
         });
       }
 
