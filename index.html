@@ -139,6 +139,13 @@
         color: #0f172a;
       }
 
+       .toolbar button.icon-button {
+        padding: 6px 10px;
+        min-width: 0;
+        font-size: 0.95rem;
+      }
+
+
       body.dark .toolbar select {
         background: rgba(15, 23, 42, 0.8);
         border-color: rgba(148, 163, 184, 0.4);
@@ -335,7 +342,7 @@
         backdrop-filter: blur(6px);
         display: grid;
         gap: 12px;
-        width: 220px;
+        width: 260px;
         position: absolute;
         right: calc(100% + 16px);
         top: 0;
@@ -391,6 +398,7 @@
         gap: 8px;
         max-height: 260px;
         overflow: auto;
+        overflow-x: hidden;
       }
 
       .settings-item {
@@ -400,6 +408,7 @@
         border-radius: 14px;
         background: rgba(248, 250, 252, 0.9);
         border: 1px solid #e2e8f0;
+        min-width: 0;
       }
 
       .settings-item label {
@@ -415,6 +424,7 @@
         border: 1px solid #cbd5e1;
         padding: 8px 10px;
         font-weight: 600;
+        width: 100%;
       }
 
       .settings-item input[type="color"] {
@@ -440,6 +450,19 @@
 
       .settings-item button {
         justify-self: start;
+      }
+
+      .settings-panel::-webkit-scrollbar,
+      .settings-drawer::-webkit-scrollbar,
+      .settings-list::-webkit-scrollbar {
+        width: 8px;
+      }
+
+      .settings-panel::-webkit-scrollbar-thumb,
+      .settings-drawer::-webkit-scrollbar-thumb,
+      .settings-list::-webkit-scrollbar-thumb {
+        background: rgba(148, 163, 184, 0.6);
+        border-radius: 999px;
       }
 
       .settings-drawer h2 {
@@ -618,10 +641,12 @@
           <option value="football">Football Field</option>
           <option value="basketball">Basketball Court</option>
           <option value="chalk">Chalkboard</option>
+          <option value="soccer">Soccer Pitch</option>
+          <option value="ice">Ice Rink</option>
         </select>
 
         
-        <button type="button" id="darkModeToggle" aria-pressed="false">Dark Mode</button>
+        <button type="button" id="darkModeToggle" class="icon-button" aria-pressed="false" aria-label="Toggle dark mode">🌙</button>
         <button type="button" id="quizModeToggle" aria-pressed="false">Quiz Mode</button>
         <button type="button" id="downloadPng">Download PNG</button>
         <button type="button" id="clearCanvas">Clear Drawing</button>
@@ -895,6 +920,7 @@
         document.body.classList.toggle("dark", isDark);
         if (darkModeToggle) {
           darkModeToggle.setAttribute("aria-pressed", String(isDark));
+          darkModeToggle.textContent = isDark ? "☀️" : "🌙";
         }
       }
 
@@ -1273,6 +1299,14 @@
         });
       }
 
+      function promptMarkerLabel(marker) {
+        const currentLabel = marker.dataset.label || "";
+        const nextLabel = window.prompt("Enter dot label:", currentLabel);
+        if (nextLabel === null) return;
+        marker.dataset.label = nextLabel.trim();
+        buildMarkerSettings();
+      }
+
       function initializeMarkerColors() {
         markers.forEach((marker) => {
           applyMarkerColor(marker, marker.dataset.color || getDefaultMarkerColor(marker), false);
@@ -1403,6 +1437,50 @@
             </g>
           </svg>
         `),
+        soccer: svgDataUrl(`
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800">
+            <defs>
+              <linearGradient id="grass" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#15803d"/>
+                <stop offset="1" stop-color="#166534"/>
+              </linearGradient>
+            </defs>
+            <rect width="1200" height="800" fill="url(#grass)"/>
+            <g stroke="rgba(255,255,255,0.75)" stroke-width="4" fill="none">
+              <rect x="60" y="60" width="1080" height="680" rx="24"/>
+              <line x1="600" y1="60" x2="600" y2="740"/>
+              <circle cx="600" cy="400" r="90"/>
+              <rect x="60" y="240" width="180" height="320" rx="18"/>
+              <rect x="960" y="240" width="180" height="320" rx="18"/>
+              <rect x="60" y="310" width="60" height="180" rx="12"/>
+              <rect x="1080" y="310" width="60" height="180" rx="12"/>
+              <circle cx="120" cy="400" r="8"/>
+              <circle cx="1080" cy="400" r="8"/>
+            </g>
+          </svg>
+        `),
+        ice: svgDataUrl(`
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800">
+            <defs>
+              <linearGradient id="ice" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#e2f0ff"/>
+                <stop offset="1" stop-color="#c7ddf5"/>
+              </linearGradient>
+            </defs>
+            <rect width="1200" height="800" fill="url(#ice)"/>
+            <g stroke="rgba(30,64,175,0.7)" stroke-width="5" fill="none">
+              <rect x="80" y="80" width="1040" height="640" rx="120"/>
+              <line x1="600" y1="80" x2="600" y2="720"/>
+              <circle cx="600" cy="400" r="110"/>
+            </g>
+            <g stroke="rgba(239,68,68,0.7)" stroke-width="4" fill="none">
+              <line x1="80" y1="220" x2="1120" y2="220"/>
+              <line x1="80" y1="580" x2="1120" y2="580"/>
+              <circle cx="260" cy="400" r="70"/>
+              <circle cx="940" cy="400" r="70"/>
+            </g>
+          </svg>
+        `),
       };
 
       function svgDataUrl(svgString) {
@@ -1441,6 +1519,9 @@
         marker.addEventListener("pointermove", onMarkerPointerMove);
         marker.addEventListener("pointerup", endMarkerDrag);
         marker.addEventListener("pointercancel", endMarkerDrag);
+        marker.addEventListener("dblclick", () => {
+          promptMarkerLabel(marker);
+        });
       });
 
       
