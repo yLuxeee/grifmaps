@@ -80,7 +80,90 @@
         --hint-bg: rgba(255, 237, 213, 0.7);
         --field-border: rgba(124, 45, 18, 0.6);
         --field-bg: #fff7ed;
-        --goal-outline: rgba(124, 45, 18, 0.35);
+        
+        
+        body[data-theme="menthol"] {
+        --app-bg: radial-gradient(circle at top left, #dcfce7, #86efac);
+        --toolbar-bg: linear-gradient(135deg, rgba(220, 252, 231, 0.98), rgba(134, 239, 172, 0.92));
+        --toolbar-text: #14532d;
+        --panel-bg: rgba(220, 252, 231, 0.92);
+        --panel-border: rgba(34, 197, 94, 0.35);
+        --hint-bg: rgba(187, 247, 208, 0.75);
+        --field-border: rgba(20, 83, 45, 0.55);
+        --field-bg: #ecfdf5;
+        --goal-outline: rgba(20, 83, 45, 0.35);
+      }
+
+      body[data-theme="red-samurai"] {
+        --app-bg: radial-gradient(circle at top left, #0f172a, #7f1d1d 50%, #dc2626);
+        --toolbar-bg: linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(127, 29, 29, 0.85));
+        --toolbar-text: #fee2e2;
+        --panel-bg: rgba(15, 23, 42, 0.9);
+        --panel-border: rgba(248, 113, 113, 0.35);
+        --hint-bg: rgba(15, 23, 42, 0.7);
+        --field-border: rgba(248, 113, 113, 0.6);
+        --field-bg: #111827;
+        --goal-outline: rgba(248, 113, 113, 0.5);
+      }
+
+      body[data-theme="grape"] {
+        --app-bg: radial-gradient(circle at top left, #ede9fe, #c4b5fd 55%, #8b5cf6);
+        --toolbar-bg: linear-gradient(135deg, rgba(237, 233, 254, 0.96), rgba(196, 181, 253, 0.9));
+        --toolbar-text: #4c1d95;
+        --panel-bg: rgba(237, 233, 254, 0.92);
+        --panel-border: rgba(139, 92, 246, 0.35);
+        --hint-bg: rgba(221, 214, 254, 0.75);
+        --field-border: rgba(76, 29, 149, 0.55);
+        --field-bg: #f5f3ff;
+        --goal-outline: rgba(76, 29, 149, 0.35);
+      }
+
+      body[data-theme="night-runner"] {
+        --app-bg: radial-gradient(circle at top left, #020617, #0ea5e9 45%, #1e1b4b);
+        --toolbar-bg: linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(2, 132, 199, 0.7));
+        --toolbar-text: #e0f2fe;
+        --panel-bg: rgba(2, 6, 23, 0.9);
+        --panel-border: rgba(56, 189, 248, 0.35);
+        --hint-bg: rgba(2, 6, 23, 0.7);
+        --field-border: rgba(56, 189, 248, 0.6);
+        --field-bg: #0b1120;
+        --goal-outline: rgba(56, 189, 248, 0.45);
+      }
+
+      body[data-theme="phantom"] {
+        --app-bg: radial-gradient(circle at top left, #0f172a, #334155 55%, #0f766e);
+        --toolbar-bg: linear-gradient(135deg, rgba(15, 23, 42, 0.92), rgba(15, 118, 110, 0.65));
+        --toolbar-text: #e2e8f0;
+        --panel-bg: rgba(15, 23, 42, 0.9);
+        --panel-border: rgba(45, 212, 191, 0.35);
+        --hint-bg: rgba(15, 23, 42, 0.7);
+        --field-border: rgba(45, 212, 191, 0.5);
+        --field-bg: #0f172a;
+        --goal-outline: rgba(45, 212, 191, 0.45);
+      }
+
+      body[data-theme="shadow"] {
+        --app-bg: radial-gradient(circle at top left, #111827, #1f2937 55%, #000000);
+        --toolbar-bg: linear-gradient(135deg, rgba(17, 24, 39, 0.95), rgba(0, 0, 0, 0.85));
+        --toolbar-text: #e5e7eb;
+        --panel-bg: rgba(17, 24, 39, 0.92);
+        --panel-border: rgba(148, 163, 184, 0.25);
+        --hint-bg: rgba(17, 24, 39, 0.75);
+        --field-border: rgba(148, 163, 184, 0.45);
+        --field-bg: #111827;
+        --goal-outline: rgba(148, 163, 184, 0.35);
+      }
+
+      body[data-theme="nexus"] {
+        --app-bg: radial-gradient(circle at top left, #f472b6, #22d3ee 50%, #0ea5e9);
+        --toolbar-bg: linear-gradient(135deg, rgba(15, 23, 42, 0.85), rgba(34, 211, 238, 0.65));
+        --toolbar-text: #f8fafc;
+        --panel-bg: rgba(15, 23, 42, 0.9);
+        --panel-border: rgba(244, 114, 182, 0.4);
+        --hint-bg: rgba(15, 23, 42, 0.7);
+        --field-border: rgba(244, 114, 182, 0.6);
+        --field-bg: #0f172a;
+        --goal-outline: rgba(34, 211, 238, 0.5);
       }
 
        body.is-loading {
@@ -175,22 +258,28 @@
         color: #0f172a;
       }
 
-       .toolbar button.icon-button {
-        padding: 6px 10px;
-        min-width: 0;
-        font-size: 0.95rem;
-      }
+      
 
       #quizModeToggle {
         display: none;
       }
 
-      body[data-theme="dark"] .toolbar select {
+      body[data-theme="dark"] .toolbar select,
+      body[data-theme="night-runner"] .toolbar select,
+      body[data-theme="phantom"] .toolbar select,
+      body[data-theme="shadow"] .toolbar select,
+      body[data-theme="nexus"] .toolbar select,
+      body[data-theme="red-samurai"] .toolbar select {
         background: rgba(15, 23, 42, 0.8);
         border-color: rgba(148, 163, 184, 0.4);
       }
 
-      body[data-theme="dark"] .toolbar option {
+      body[data-theme="dark"] .toolbar option,
+      body[data-theme="night-runner"] .toolbar option,
+      body[data-theme="phantom"] .toolbar option,
+      body[data-theme="shadow"] .toolbar option,
+      body[data-theme="nexus"] .toolbar option,
+      body[data-theme="red-samurai"] .toolbar option {
         color: #e2e8f0;
         background: #0f172a;
       }
@@ -700,10 +789,17 @@
           <option value="bubblegum">Bubblegum</option>
           <option value="rgb">RGB</option>
           <option value="creamsicle">Creamsicle</option>
+          <option value="menthol">Menthol</option>
+          <option value="red-samurai">Red Samurai</option>
+          <option value="grape">Grape</option>
+          <option value="night-runner">Night Runner</option>
+          <option value="phantom">Phantom</option>
+          <option value="shadow">Shadow</option>
+          <option value="nexus">Nexus</option>
         </select>
 
         
-        <button type="button" id="darkModeToggle" class="icon-button" aria-pressed="false" aria-label="Toggle dark mode">🌙</button>
+        
         <button type="button" id="quizModeToggle" aria-pressed="false">Quiz Mode</button>
         <button type="button" id="downloadPng">Download PNG</button>
         <button type="button" id="clearCanvas">Clear Drawing</button>
@@ -766,7 +862,7 @@
       const clearButton = document.getElementById("clearCanvas");
       const dotSizeControl = document.getElementById("dotSize");
       const restoreDotsButton = document.getElementById("restoreDots");
-      const darkModeToggle = document.getElementById("darkModeToggle");
+      
       const themeSelect = document.getElementById("themeSelect");
       const quizModeToggle = document.getElementById("quizModeToggle");
       const downloadButton = document.getElementById("downloadPng");
@@ -979,16 +1075,7 @@
         if (themeSelect) {
           themeSelect.value = theme;
         }
-        if (darkModeToggle) {
-          const isDark = theme === "dark";
-          darkModeToggle.setAttribute("aria-pressed", String(isDark));
-          darkModeToggle.textContent = isDark ? "☀️" : "🌙";
-        }
-      }
-
-      function toggleDarkTheme() {
-        const current = document.body.dataset.theme || "light";
-        setTheme(current === "dark" ? "light" : "dark");
+        
       }
 
       function setQuizMode(isQuizMode) {
@@ -1628,11 +1715,7 @@
         });
       }
 
-      if (darkModeToggle) {
-        darkModeToggle.addEventListener("click", () => {
-          toggleDarkTheme();
-        });
-      }
+      
 
       if (themeSelect) {
         themeSelect.addEventListener("change", () => {
