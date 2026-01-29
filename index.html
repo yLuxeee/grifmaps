@@ -689,7 +689,7 @@
         right: calc(100% + 16px);
         top: 0;
         max-height: min(70vh, 520px);
-        overflow: hidden;
+        overflow: visible;
       }
 
       .settings-panel.is-popup {
@@ -823,6 +823,76 @@
         gap: 8px;
       }
 
+      .theme-toggle {
+        width: 100%;
+        padding: 10px 14px;
+        border-radius: 999px;
+        border: none;
+        background: #1d4ed8;
+        color: #f8fafc;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      .theme-panel {
+        position: absolute;
+        left: calc(100% + 14px);
+        top: 0;
+        width: 260px;
+        padding: 12px;
+        border-radius: 18px;
+        background: var(--panel-bg);
+        border: 1px solid var(--panel-border);
+        box-shadow: 0 18px 32px rgba(15, 23, 42, 0.2);
+        backdrop-filter: blur(8px);
+        z-index: 12;
+      }
+
+      .theme-panel[hidden] {
+        display: none;
+      }
+
+      .theme-panel h3 {
+        margin: 0 0 10px;
+        font-size: 0.9rem;
+        color: var(--toolbar-text);
+      }
+
+      .theme-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+        max-height: 320px;
+        overflow: auto;
+        padding-right: 4px;
+      }
+
+      .theme-grid button {
+        border: 1px solid rgba(148, 163, 184, 0.4);
+        border-radius: 12px;
+        padding: 8px 10px;
+        font-weight: 700;
+        cursor: pointer;
+        font-size: 0.8rem;
+        text-align: center;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+      }
+
+      .theme-grid button.active {
+        transform: translateY(-1px);
+        box-shadow: 0 10px 18px rgba(15, 23, 42, 0.25);
+      }
+
+      .theme-grid::-webkit-scrollbar {
+        width: 6px;
+      }
+
+      .theme-grid::-webkit-scrollbar-thumb {
+        background: rgba(148, 163, 184, 0.6);
+        border-radius: 999px;
+      }
+
+
       .saved-panel h2 {
         font-size: 0.95rem;
         margin: 0;
@@ -837,13 +907,49 @@
         width: 100%;
       }
 
-      body[data-theme="dark"] .settings-item {
+      body[data-theme="dark"] .settings-item,
+      body[data-theme="night-runner"] .settings-item,
+      body[data-theme="phantom"] .settings-item,
+      body[data-theme="shadow"] .settings-item,
+      body[data-theme="nexus"] .settings-item,
+      body[data-theme="red-samurai"] .settings-item,
+      body[data-theme="drowning"] .settings-item,
+      body[data-theme="spiderman"] .settings-item,
+      body[data-theme="godspeed"] .settings-item,
+      body[data-theme="glitch"] .settings-item,
+      body[data-theme="antimatter"] .settings-item,
+      body[data-theme="war"] .settings-item,
+      body[data-theme="rainbow-trail"] .settings-item {
         background: rgba(30, 41, 59, 0.85);
         border-color: rgba(148, 163, 184, 0.25);
       }
 
       body[data-theme="dark"] .settings-item input[type="text"],
-      body[data-theme="dark"] .saved-panel input[type="text"] {
+      body[data-theme="dark"] .saved-panel input[type="text"],
+      body[data-theme="night-runner"] .settings-item input[type="text"],
+      body[data-theme="night-runner"] .saved-panel input[type="text"],
+      body[data-theme="phantom"] .settings-item input[type="text"],
+      body[data-theme="phantom"] .saved-panel input[type="text"],
+      body[data-theme="shadow"] .settings-item input[type="text"],
+      body[data-theme="shadow"] .saved-panel input[type="text"],
+      body[data-theme="nexus"] .settings-item input[type="text"],
+      body[data-theme="nexus"] .saved-panel input[type="text"],
+      body[data-theme="red-samurai"] .settings-item input[type="text"],
+      body[data-theme="red-samurai"] .saved-panel input[type="text"],
+      body[data-theme="drowning"] .settings-item input[type="text"],
+      body[data-theme="drowning"] .saved-panel input[type="text"],
+      body[data-theme="spiderman"] .settings-item input[type="text"],
+      body[data-theme="spiderman"] .saved-panel input[type="text"],
+      body[data-theme="godspeed"] .settings-item input[type="text"],
+      body[data-theme="godspeed"] .saved-panel input[type="text"],
+      body[data-theme="glitch"] .settings-item input[type="text"],
+      body[data-theme="glitch"] .saved-panel input[type="text"],
+      body[data-theme="antimatter"] .settings-item input[type="text"],
+      body[data-theme="antimatter"] .saved-panel input[type="text"],
+      body[data-theme="war"] .settings-item input[type="text"],
+      body[data-theme="war"] .saved-panel input[type="text"],
+      body[data-theme="rainbow-trail"] .settings-item input[type="text"],
+      body[data-theme="rainbow-trail"] .saved-panel input[type="text"] {
         background: rgba(15, 23, 42, 0.6);
         border-color: rgba(148, 163, 184, 0.3);
         color: #e2e8f0;
@@ -996,36 +1102,7 @@
           <option value="ice">Ice Rink</option>
         </select>
 
-        <label for="themeSelect">Theme</label>
-        <select id="themeSelect" aria-label="Theme selector">
-          <option value="light" selected>Light</option>
-          <option value="dark">Dark</option>
-          <option value="bubblegum">Bubblegum</option>
-          <option value="rgb">RGB</option>
-          <option value="creamsicle">Creamsicle</option>
-          <option value="menthol">Menthol</option>
-          <option value="red-samurai">Red Samurai</option>
-          <option value="grape">Grape</option>
-          <option value="night-runner">Night Runner</option>
-          <option value="phantom">Phantom</option>
-          <option value="shadow">Shadow</option>
-          <option value="nexus">Nexus</option>
-          <option value="drowning">Drowning</option>
-          <option value="spiderman">Spiderman</option>
-          <option value="honey">Honey</option>
-          <option value="mexican">Mexican</option>
-          <option value="retrocast">Retrocast</option>
-          <option value="cheesecake">Cheesecake</option>
-          <option value="rainbow-trail">Rainbow Trail</option>
-          <option value="iceberg">Iceberg</option>
-          <option value="godspeed">Godspeed</option>
-          <option value="lavender">Lavender</option>
-          <option value="pink-lemonade">Pink Lemonade</option>
-          <option value="glitch">Glitch</option>
-          <option value="antimatter">Antimatter</option>
-          <option value="war">War</option>
-        </select>
-
+     
         
         
         <button type="button" id="quizModeToggle" aria-pressed="false">Quiz Mode</button>
@@ -1043,14 +1120,19 @@
             </button>
             <div class="settings-drawer" id="settingsDrawer">
               <h2>Dot controls</h2>
-              <div class="settings-item">
-                <label for="dotSize">Dot size</label>
-                <input type="range" id="dotSize" min="28" max="90" value="52" />
-              </div>
-              <div class="settings-list" id="settingsList"></div>
-              <button type="button" id="restoreDots">Restore all dots</button>
+            <div class="settings-item">
+              <label for="dotSize">Dot size</label>
+              <input type="range" id="dotSize" min="28" max="90" value="52" />
             </div>
-          </aside>
+            <button type="button" class="theme-toggle" id="themeToggle">Themes</button>
+            <div class="settings-list" id="settingsList"></div>
+            <button type="button" id="restoreDots">Restore all dots</button>
+          </div>
+          <div class="theme-panel" id="themePanel" hidden>
+            <h3>Select a theme</h3>
+            <div class="theme-grid" id="themeGrid" role="list"></div>
+          </div>
+        </aside>
           <aside class="saved-panel" aria-label="Saved positions">
             <h2>Saved positions</h2>
             <label class="sr-only" for="saveName">Position name</label>
@@ -1094,7 +1176,9 @@
       const dotSizeControl = document.getElementById("dotSize");
       const restoreDotsButton = document.getElementById("restoreDots");
       
-      const themeSelect = document.getElementById("themeSelect");
+      const themeToggle = document.getElementById("themeToggle");
+      const themePanel = document.getElementById("themePanel");
+      const themeGrid = document.getElementById("themeGrid");
       const quizModeToggle = document.getElementById("quizModeToggle");
       const downloadButton = document.getElementById("downloadPng");
       const modeButtons = document.querySelectorAll("[data-mode]");
@@ -1303,8 +1387,11 @@
 
       function setTheme(theme) {
         document.body.dataset.theme = theme;
-        if (themeSelect) {
-          themeSelect.value = theme;
+        if (themeGrid) {
+          const buttons = themeGrid.querySelectorAll("button[data-theme]");
+          buttons.forEach((button) => {
+            button.classList.toggle("active", button.dataset.theme === theme);
+          });
         }
         
       }
@@ -1948,11 +2035,7 @@
 
       
 
-      if (themeSelect) {
-        themeSelect.addEventListener("change", () => {
-          setTheme(themeSelect.value);
-        });
-      }
+      
 
       if (quizModeToggle) {
         quizModeToggle.addEventListener("click", () => {
@@ -2037,6 +2120,63 @@
       
       refreshConnectorPositions();
       applyBackgroundPreset(backgroundSelect.value);
+
+      const themeOptions = [
+        { value: "light", label: "Light", swatch: "#e2e8f0", text: "#0f172a" },
+        { value: "dark", label: "Dark", swatch: "#0f172a", text: "#e2e8f0" },
+        { value: "bubblegum", label: "Bubblegum", swatch: "#fbcfe8", text: "#831843" },
+        { value: "rgb", label: "RGB", swatch: "#7c3aed", text: "#f8fafc" },
+        { value: "creamsicle", label: "Creamsicle", swatch: "#fed7aa", text: "#7c2d12" },
+        { value: "menthol", label: "Menthol", swatch: "#86efac", text: "#14532d" },
+        { value: "red-samurai", label: "Red Samurai", swatch: "#7f1d1d", text: "#fee2e2" },
+        { value: "grape", label: "Grape", swatch: "#c4b5fd", text: "#4c1d95" },
+        { value: "night-runner", label: "Night Runner", swatch: "#0ea5e9", text: "#e0f2fe" },
+        { value: "phantom", label: "Phantom", swatch: "#0f766e", text: "#e2e8f0" },
+        { value: "shadow", label: "Shadow", swatch: "#111827", text: "#e5e7eb" },
+        { value: "nexus", label: "Nexus", swatch: "#22d3ee", text: "#0f172a" },
+        { value: "drowning", label: "Drowning", swatch: "#0f3d5c", text: "#e0f2fe" },
+        { value: "spiderman", label: "Spiderman", swatch: "#7f1d1d", text: "#fee2e2" },
+        { value: "honey", label: "Honey", swatch: "#f59e0b", text: "#7c2d12" },
+        { value: "mexican", label: "Mexican", swatch: "#f97316", text: "#7c2d12" },
+        { value: "retrocast", label: "Retrocast", swatch: "#facc15", text: "#0f172a" },
+        { value: "cheesecake", label: "Cheesecake", swatch: "#fbcfe8", text: "#9d174d" },
+        { value: "rainbow-trail", label: "Rainbow Trail", swatch: "#0f172a", text: "#f8fafc" },
+        { value: "iceberg", label: "Iceberg", swatch: "#bae6fd", text: "#1e3a8a" },
+        { value: "godspeed", label: "Godspeed", swatch: "#111827", text: "#fef3c7" },
+        { value: "lavender", label: "Lavender", swatch: "#ddd6fe", text: "#4c1d95" },
+        { value: "pink-lemonade", label: "Pink Lemonade", swatch: "#fde68a", text: "#9f1239" },
+        { value: "glitch", label: "Glitch", swatch: "#312e81", text: "#fdf2f8" },
+        { value: "antimatter", label: "Antimatter", swatch: "#4c1d95", text: "#e0e7ff" },
+        { value: "war", label: "War", swatch: "#7f1d1d", text: "#fee2e2" },
+      ];
+
+      function renderThemeGrid() {
+        if (!themeGrid) return;
+        themeGrid.innerHTML = "";
+        themeOptions.forEach((option) => {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.dataset.theme = option.value;
+          button.textContent = option.label;
+          button.style.background = option.swatch;
+          button.style.color = option.text;
+          button.addEventListener("click", () => {
+            setTheme(option.value);
+          });
+          themeGrid.appendChild(button);
+        });
+        setTheme(document.body.dataset.theme || "light");
+      }
+
+      if (themeToggle && themePanel) {
+        themeToggle.addEventListener("click", () => {
+          const isHidden = themePanel.hasAttribute("hidden");
+          if (isHidden) themePanel.removeAttribute("hidden");
+          else themePanel.setAttribute("hidden", "");
+        });
+      }
+
+      renderThemeGrid();
 
       const splashScreen = document.getElementById("splashScreen");
       if (splashScreen) {
