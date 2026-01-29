@@ -35,7 +35,7 @@
         color: var(--toolbar-text);
       }
 
-      body.dark {
+      body[data-theme="dark"] {
         --app-bg: radial-gradient(circle at top left, #0f172a, #1e293b);
         --toolbar-bg: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9));
         --toolbar-text: #e2e8f0;
@@ -45,6 +45,42 @@
         --field-border: rgba(226, 232, 240, 0.65);
         --field-bg: #1f2937;
         --goal-outline: rgba(148, 163, 184, 0.6);
+      }
+
+      body[data-theme="bubblegum"] {
+        --app-bg: radial-gradient(circle at top left, #fde2f3, #fbcfe8);
+        --toolbar-bg: linear-gradient(135deg, rgba(255, 236, 248, 0.96), rgba(250, 225, 240, 0.9));
+        --toolbar-text: #831843;
+        --panel-bg: rgba(255, 236, 248, 0.92);
+        --panel-border: rgba(244, 114, 182, 0.35);
+        --hint-bg: rgba(253, 230, 246, 0.7);
+        --field-border: rgba(157, 23, 77, 0.7);
+        --field-bg: #fdf2f8;
+        --goal-outline: rgba(131, 24, 67, 0.4);
+      }
+
+      body[data-theme="rgb"] {
+        --app-bg: radial-gradient(circle at top left, #0ea5e9, #7c3aed 45%, #f43f5e);
+        --toolbar-bg: linear-gradient(135deg, rgba(15, 23, 42, 0.75), rgba(30, 41, 59, 0.7));
+        --toolbar-text: #f8fafc;
+        --panel-bg: rgba(15, 23, 42, 0.85);
+        --panel-border: rgba(248, 250, 252, 0.2);
+        --hint-bg: rgba(15, 23, 42, 0.65);
+        --field-border: rgba(248, 250, 252, 0.6);
+        --field-bg: #0f172a;
+        --goal-outline: rgba(248, 250, 252, 0.5);
+      }
+
+      body[data-theme="creamsicle"] {
+        --app-bg: radial-gradient(circle at top left, #ffedd5, #fed7aa);
+        --toolbar-bg: linear-gradient(135deg, rgba(255, 247, 237, 0.96), rgba(254, 215, 170, 0.9));
+        --toolbar-text: #7c2d12;
+        --panel-bg: rgba(255, 247, 237, 0.92);
+        --panel-border: rgba(251, 146, 60, 0.35);
+        --hint-bg: rgba(255, 237, 213, 0.7);
+        --field-border: rgba(124, 45, 18, 0.6);
+        --field-bg: #fff7ed;
+        --goal-outline: rgba(124, 45, 18, 0.35);
       }
 
        body.is-loading {
@@ -145,13 +181,16 @@
         font-size: 0.95rem;
       }
 
+      #quizModeToggle {
+        display: none;
+      }
 
-      body.dark .toolbar select {
+      body[data-theme="dark"] .toolbar select {
         background: rgba(15, 23, 42, 0.8);
         border-color: rgba(148, 163, 184, 0.4);
       }
 
-      body.dark .toolbar option {
+      body[data-theme="dark"] .toolbar option {
         color: #e2e8f0;
         background: #0f172a;
       }
@@ -342,12 +381,21 @@
         backdrop-filter: blur(6px);
         display: grid;
         gap: 12px;
-        width: 260px;
+        width: 280px;
         position: absolute;
         right: calc(100% + 16px);
         top: 0;
         max-height: min(70vh, 520px);
         overflow: hidden;
+      }
+
+      .settings-panel.is-popup {
+        z-index: 10;
+        border: 1px solid var(--panel-border);
+      }
+
+      .settings-panel.is-popup .settings-drawer {
+        background: transparent;
       }
 
       .saved-panel {
@@ -486,13 +534,13 @@
         width: 100%;
       }
 
-      body.dark .settings-item {
+      body[data-theme="dark"] .settings-item {
         background: rgba(30, 41, 59, 0.85);
         border-color: rgba(148, 163, 184, 0.25);
       }
 
-      body.dark .settings-item input[type="text"],
-      body.dark .saved-panel input[type="text"] {
+      body[data-theme="dark"] .settings-item input[type="text"],
+      body[data-theme="dark"] .saved-panel input[type="text"] {
         background: rgba(15, 23, 42, 0.6);
         border-color: rgba(148, 163, 184, 0.3);
         color: #e2e8f0;
@@ -645,6 +693,15 @@
           <option value="ice">Ice Rink</option>
         </select>
 
+        <label for="themeSelect">Theme</label>
+        <select id="themeSelect" aria-label="Theme selector">
+          <option value="light" selected>Light</option>
+          <option value="dark">Dark</option>
+          <option value="bubblegum">Bubblegum</option>
+          <option value="rgb">RGB</option>
+          <option value="creamsicle">Creamsicle</option>
+        </select>
+
         
         <button type="button" id="darkModeToggle" class="icon-button" aria-pressed="false" aria-label="Toggle dark mode">🌙</button>
         <button type="button" id="quizModeToggle" aria-pressed="false">Quiz Mode</button>
@@ -656,7 +713,7 @@
 
       <div class="field-wrapper">
         <div class="field-stage">
-          <aside class="settings-panel" aria-label="Marker settings">
+          <aside class="settings-panel is-popup" aria-label="Marker settings">
             <button type="button" class="settings-toggle" id="settingsToggle" aria-expanded="true">
               Settings
             </button>
@@ -710,6 +767,7 @@
       const dotSizeControl = document.getElementById("dotSize");
       const restoreDotsButton = document.getElementById("restoreDots");
       const darkModeToggle = document.getElementById("darkModeToggle");
+      const themeSelect = document.getElementById("themeSelect");
       const quizModeToggle = document.getElementById("quizModeToggle");
       const downloadButton = document.getElementById("downloadPng");
       const modeButtons = document.querySelectorAll("[data-mode]");
@@ -916,12 +974,21 @@
         field.style.setProperty("--dot-size", `${clamped}px`);
       }
 
-      function setDarkMode(isDark) {
-        document.body.classList.toggle("dark", isDark);
+      function setTheme(theme) {
+        document.body.dataset.theme = theme;
+        if (themeSelect) {
+          themeSelect.value = theme;
+        }
         if (darkModeToggle) {
+          const isDark = theme === "dark";
           darkModeToggle.setAttribute("aria-pressed", String(isDark));
           darkModeToggle.textContent = isDark ? "☀️" : "🌙";
         }
+      }
+
+      function toggleDarkTheme() {
+        const current = document.body.dataset.theme || "light";
+        setTheme(current === "dark" ? "light" : "dark");
       }
 
       function setQuizMode(isQuizMode) {
@@ -1563,7 +1630,13 @@
 
       if (darkModeToggle) {
         darkModeToggle.addEventListener("click", () => {
-          setDarkMode(!document.body.classList.contains("dark"));
+          toggleDarkTheme();
+        });
+      }
+
+      if (themeSelect) {
+        themeSelect.addEventListener("change", () => {
+          setTheme(themeSelect.value);
         });
       }
 
@@ -1641,7 +1714,9 @@
         handleDotSizeChange(dotSizeControl.value);
       }
       if (window.matchMedia) {
-        setDarkMode(window.matchMedia("(prefers-color-scheme: dark)").matches);
+        setTheme(window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+      } else {
+        setTheme("light");
       }
       buildMarkerSettings();
       refreshMarkerPositions();
@@ -1655,6 +1730,29 @@
           if (event.animationName !== "splash-fade-out") return;
           splashScreen.remove();
           document.body.classList.remove("is-loading");
+          const title = document.getElementById("appTitle");
+          if (!title) return;
+          const fonts = [
+            '"Bebas Neue", system-ui, sans-serif',
+            '"Oswald", system-ui, sans-serif',
+            '"Space Grotesk", system-ui, sans-serif',
+            '"Playfair Display", serif',
+            '"Futura", system-ui, sans-serif',
+            '"Segoe UI", system-ui, sans-serif',
+            '"Trebuchet MS", system-ui, sans-serif',
+            '"Courier New", monospace',
+            '"Georgia", serif',
+            '"Inter", system-ui, sans-serif',
+          ];
+          let idx = 0;
+          const interval = setInterval(() => {
+            title.style.fontFamily = fonts[idx % fonts.length];
+            idx += 1;
+            if (idx >= fonts.length * 2) {
+              clearInterval(interval);
+              title.style.fontFamily = '"Inter", "Segoe UI", system-ui, sans-serif';
+            }
+          }, 80);
         });
       }
     </script>
