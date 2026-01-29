@@ -327,11 +327,11 @@
         --toolbar-bg: linear-gradient(135deg, rgba(17, 24, 39, 0.95), rgba(127, 29, 29, 0.78));
         --toolbar-text: #fee2e2;
         --panel-bg: rgba(17, 24, 39, 0.92);
-        --panel-border: rgba(248, 113, 113, 0.35);
+        --panel-border: rgba(255, 0, 0, 0.74);
         --hint-bg: rgba(17, 24, 39, 0.7);
-        --field-border: rgba(248, 113, 113, 0.55);
+        --field-border: rgba(255, 0, 0, 0.795);
         --field-bg: #111827;
-        --goal-outline: rgba(248, 113, 113, 0.45);
+        --goal-outline: rgba(243, 82, 82, 0.705);
       }
 
        body.is-loading {
@@ -344,6 +344,26 @@
         gap: 16px;
         opacity: 0;
         animation: app-fade-in 0.6s ease 1.8s forwards;
+      }
+
+       footer {
+        text-align: center;
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--toolbar-text);
+        opacity: 0.85;
+        padding: 4px 0 12px;
+      }
+
+      footer span {
+        display: inline-flex;
+        gap: 10px;
+        align-items: center;
+        background: var(--panel-bg);
+        border: 1px solid var(--panel-border);
+        padding: 6px 14px;
+        border-radius: 999px;
+        box-shadow: 0 12px 20px rgba(15, 23, 42, 0.18);
       }
 
       .toolbar {
@@ -988,7 +1008,7 @@
           <option value="spiderman">Spiderman</option>
           <option value="honey">Honey</option>
           <option value="mexican">Mexican</option>
-          <option value="retrocast">Retrocast (Cyan/Yellow)</option>
+          <option value="retrocast">Retrocast</option>
           <option value="cheesecake">Cheesecake</option>
           <option value="rainbow-trail">Rainbow Trail</option>
           <option value="iceberg">Iceberg</option>
@@ -1040,21 +1060,24 @@
             <div class="goal-point red" data-label="Goal" data-goal="red" data-x="10" data-y="50" style="left: 10%; top: 50%;" aria-hidden="true"></div>
             <div class="goal-point blue" data-label="Goal" data-goal="blue" data-x="90" data-y="50" style="left: 90%; top: 50%;" aria-hidden="true"></div>
 
-            <div class="marker red" data-label="R1" data-x="18" data-y="22" role="button"></div>
-            <div class="marker red" data-label="R2" data-x="32" data-y="68" role="button"></div>
-            <div class="marker red" data-label="R3" data-x="50" data-y="32" role="button"></div>
-            <div class="marker red" data-label="R4" data-x="70" data-y="78" role="button"></div>
+            <div class="marker red" data-label="R1" data-x="82" data-y="22" role="button"></div>
+            <div class="marker red" data-label="R2" data-x="68" data-y="68" role="button"></div>
+            <div class="marker red" data-label="R3" data-x="54" data-y="32" role="button"></div>
+            <div class="marker red" data-label="R4" data-x="74" data-y="78" role="button"></div>
 
-            <div class="marker blue" data-label="B1" data-x="82" data-y="26" role="button"></div>
-            <div class="marker blue" data-label="B2" data-x="24" data-y="48" role="button"></div>
-            <div class="marker blue" data-label="B3" data-x="54" data-y="60" role="button"></div>
-            <div class="marker blue" data-label="B4" data-x="40" data-y="84" role="button"></div>
+            <div class="marker blue" data-label="B1" data-x="18" data-y="26" role="button"></div>
+            <div class="marker blue" data-label="B2" data-x="32" data-y="48" role="button"></div>
+            <div class="marker blue" data-label="B3" data-x="46" data-y="60" role="button"></div>
+            <div class="marker blue" data-label="B4" data-x="26" data-y="84" role="button"></div>
 
             
           </section>
         </div>
       </div>
     </main>
+    <footer>
+      <span>Grifmaps v1.1.10 · Made by yLuxe</span>
+    </footer>
 
     <script>
       const field = document.getElementById("field");
