@@ -106,6 +106,33 @@
         --goal-outline: rgba(248, 113, 113, 0.5);
       }
 
+      body[data-theme="for-rage"] {
+        --app-bg:
+          radial-gradient(circle at top left, #450a0a, #991b1b 45%, #ec7f25 70%, #fca5a5);
+        --toolbar-bg: linear-gradient(135deg, rgba(69, 10, 10, 0.94), rgba(240, 183, 29, 0.86));
+        --toolbar-text: #ffe4e6;
+        --panel-bg: rgba(69, 10, 10, 0.85);
+        --panel-border: rgba(254, 202, 202, 0.35);
+        --hint-bg: rgba(127, 29, 29, 0.68);
+        --field-border: rgba(254, 202, 202, 0.6);
+        --field-bg: #3f1111;
+        --goal-outline: rgba(238, 134, 15, 0.45);
+      }
+
+      body[data-theme="for-rage"]::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+
+  background-image: url("panda.png");
+  background-repeat: repeat;
+  background-size: 120px 120px;
+  opacity: 0.25;
+}
+
+
       body[data-theme="grape"] {
         --app-bg: radial-gradient(circle at top left, #ede9fe, #c4b5fd 55%, #8b5cf6);
         --toolbar-bg: linear-gradient(135deg, rgba(237, 233, 254, 0.96), rgba(196, 181, 253, 0.9));
@@ -842,6 +869,7 @@
       body[data-theme="shadow"] .toolbar select,
       body[data-theme="nexus"] .toolbar select,
       body[data-theme="red-samurai"] .toolbar select,
+      body[data-theme="for-rage"] .toolbar select,
       body[data-theme="drowning"] .toolbar select,
       body[data-theme="spiderman"] .toolbar select,
       body[data-theme="godspeed"] .toolbar select,
@@ -859,6 +887,7 @@
       body[data-theme="shadow"] .toolbar option,
       body[data-theme="nexus"] .toolbar option,
       body[data-theme="red-samurai"] .toolbar option,
+      body[data-theme="for-rage"] .toolbar option,
       body[data-theme="drowning"] .toolbar option,
       body[data-theme="spiderman"] .toolbar option,
       body[data-theme="godspeed"] .toolbar option,
@@ -1160,7 +1189,7 @@
         display: flex;
         flex-direction: column;
         gap: 12px;
-        flex: 1;
+        
         max-height: none;
         overflow: auto;
         padding-right: 4px;
@@ -1256,27 +1285,46 @@
       }
 
       .settings-drawer h2 {
+        font-size: 0.95rem;
+        margin: 0;
+      }
+
+      .settings-header {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: 8px;
+        gap: 12px;
       }
 
       .theme-toggle {
-        width: 100%;
-        padding: 10px 14px;
+        padding: 8px 14px;
         border-radius: 999px;
-        border: none;
-        background: #1d4ed8;
+        border: 1px solid rgba(148, 163, 184, 0.5);
+        background: linear-gradient(135deg, #1d4ed8, #2563eb);
         color: #f8fafc;
         font-weight: 700;
         cursor: pointer;
+        letter-spacing: 0.01em;
+        box-shadow: 0 10px 18px rgba(37, 99, 235, 0.25);
+        transition: transform 0.15s ease, box-shadow 0.2s ease, filter 0.2s ease;
+        white-space: nowrap;
+      }
+
+      .theme-toggle:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 14px 22px rgba(37, 99, 235, 0.35);
+        filter: brightness(1.05);
+      }
+
+      .theme-toggle[aria-expanded="true"] {
+        box-shadow: 0 16px 24px rgba(37, 99, 235, 0.4);
+        filter: brightness(1.08);
       }
 
       .theme-panel {
         position: absolute;
         left: calc(100% + 14px);
-        top: 0;
+        top: 8px;
         width: 260px;
         padding: 12px;
         border-radius: 18px;
@@ -1285,10 +1333,17 @@
         box-shadow: 0 18px 32px rgba(15, 23, 42, 0.2);
         backdrop-filter: blur(8px);
         z-index: 12;
+        opacity: 0;
+        transform: translateY(8px) scale(0.98);
+        transform-origin: top left;
+        pointer-events: none;
+        transition: opacity 0.2s ease, transform 0.2s ease;
       }
 
-      .theme-panel[hidden] {
-        display: none;
+      .theme-panel.is-open {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        pointer-events: auto;
       }
 
       .theme-panel h3 {
@@ -1314,7 +1369,14 @@
         cursor: pointer;
         font-size: 0.8rem;
         text-align: center;
-        transition: transform 0.15s ease, box-shadow 0.15s ease;
+        transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+        background: rgba(248, 250, 252, 0.95);
+      }
+
+      .theme-grid button:hover {
+        transform: translateY(-1px);
+        border-color: rgba(37, 99, 235, 0.5);
+        box-shadow: 0 12px 18px rgba(15, 23, 42, 0.18);
       }
 
       .theme-grid button.active {
@@ -1352,6 +1414,7 @@
       body[data-theme="shadow"] .settings-item,
       body[data-theme="nexus"] .settings-item,
       body[data-theme="red-samurai"] .settings-item,
+      body[data-theme="for-rage"] .settings-item,
       body[data-theme="drowning"] .settings-item,
       body[data-theme="spiderman"] .settings-item,
       body[data-theme="godspeed"] .settings-item,
@@ -1375,6 +1438,8 @@
       body[data-theme="nexus"] .saved-panel input[type="text"],
       body[data-theme="red-samurai"] .settings-item input[type="text"],
       body[data-theme="red-samurai"] .saved-panel input[type="text"],
+      body[data-theme="for-rage"] .settings-item input[type="text"],
+      body[data-theme="for-rage"] .saved-panel input[type="text"],
       body[data-theme="drowning"] .settings-item input[type="text"],
       body[data-theme="drowning"] .saved-panel input[type="text"],
       body[data-theme="spiderman"] .settings-item input[type="text"],
@@ -1559,7 +1624,18 @@
               Settings
             </button>
             <div class="settings-drawer" id="settingsDrawer">
-              <h2>Dot controls</h2>
+              <div class="settings-header">
+                <h2>Dot controls</h2>
+                <button
+                  type="button"
+                  class="theme-toggle"
+                  id="themeToggle"
+                  aria-expanded="false"
+                  aria-controls="themePanel"
+                >
+                  Themes ▾
+                </button>
+              </div>
             <div class="settings-item">
               <label for="dotSize">Dot size</label>
               <input type="range" id="dotSize" min="28" max="90" value="52" />
@@ -1573,15 +1649,15 @@
             
               
             </div>
-            <button type="button" class="theme-toggle" id="themeToggle">Themes</button>
+            
             <div class="settings-list" id="settingsList"></div>
             <button type="button" id="restoreDots">Restore all dots</button>
-          </div>
-          <div class="theme-panel" id="themePanel" hidden>
+          </aside>
+          <div class="theme-panel" id="themePanel" aria-hidden="true">
             <h3>Select a theme</h3>
             <div class="theme-grid" id="themeGrid" role="list"></div>
           </div>
-        </aside>
+        
           <aside class="saved-panel" aria-label="Saved positions">
             <h2>Saved positions</h2>
             <label class="sr-only" for="saveName">Position name</label>
@@ -2610,7 +2686,11 @@
           settingsToggle.setAttribute("aria-expanded", String(!isExpanded));
           settingsDrawer.hidden = isExpanded;
           if (themePanel && !settingsDrawer.hidden) return;
-          if (themePanel) themePanel.setAttribute("hidden", "");
+          if (themePanel) {
+            themePanel.classList.remove("is-open");
+            themePanel.setAttribute("aria-hidden", "true");
+          }
+          if (themeToggle) themeToggle.setAttribute("aria-expanded", "false");
         });
       }
 
@@ -2980,6 +3060,7 @@
         { value: "antimatter", label: "Antimatter", swatch: "#4c1d95", text: "#e0e7ff" },
         { value: "godspeed", label: "Godspeed", swatch: "#111827", text: "#fef3c7" },
         { value: "red-samurai", label: "Red Samurai", swatch: "#7f1d1d", text: "#fee2e2" },
+        { value: "for-rage", label: "For Rage", swatch: "#991b1b", text: "#ffe4e6" },
         { value: "spiderman", label: "Spiderman", swatch: "#7f1d1d", text: "#fee2e2" },
         { value: "war", label: "War", swatch: "#7f1d1d", text: "#fee2e2" },
         { value: "rainbow-trail", label: "Rainbow Trail", swatch: "#0f172a", text: "#f8fafc" },
@@ -3007,10 +3088,22 @@
       }
 
       if (themeToggle && themePanel) {
-        themeToggle.addEventListener("click", () => {
-          const isHidden = themePanel.hasAttribute("hidden");
-          if (isHidden) themePanel.removeAttribute("hidden");
-          else themePanel.setAttribute("hidden", "");
+        themeToggle.addEventListener("click", (event) => {
+          event.stopPropagation();
+          const isOpen = themePanel.classList.contains("is-open");
+          themePanel.classList.toggle("is-open", !isOpen);
+          themePanel.setAttribute("aria-hidden", String(isOpen));
+          themeToggle.setAttribute("aria-expanded", String(!isOpen));
+        });
+
+        document.addEventListener("click", (event) => {
+          const target = event.target;
+          if (!(target instanceof Node)) return;
+          if (themePanel.contains(target) || themeToggle.contains(target)) return;
+          if (!themePanel.classList.contains("is-open")) return;
+          themePanel.classList.remove("is-open");
+          themePanel.setAttribute("aria-hidden", "true");
+          themeToggle.setAttribute("aria-expanded", "false");
         });
       }
 
