@@ -132,6 +132,73 @@
   opacity: 0.25;
 }
 
+      body[data-theme="grifballhub"]{
+  --app-bg: radial-gradient(circle at 45% 25%, #154068 0%, #103a7d 34%, #061a3f 70%, #020913 100%);
+  --toolbar-bg: linear-gradient(135deg, rgba(6,16,32,.92), rgba(18,70,140,.70));
+  --toolbar-text: #4a739e;
+  --panel-bg: rgba(6, 14, 30, 0.72);
+  --panel-border: rgba(150, 190, 255, 0.22);
+  --hint-bg: rgba(16, 60, 120, 0.55);
+  --field-border: rgba(120, 190, 255, 0.35);
+  --field-bg: rgba(4, 12, 28, 0.65);
+  --goal-outline: rgba(255, 232, 120, 0.75);
+
+  background: var(--app-bg);
+}
+
+/* Hex layer + soft “space mist” */
+body[data-theme="grifballhub"]::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  z-index:-1;
+
+  background-image:
+    /* subtle nebula blobs */
+    radial-gradient(700px 450px at 55% 35%, rgba(90,160,255,.18), transparent 60%),
+    radial-gradient(520px 360px at 40% 55%, rgba(40,120,220,.16), transparent 62%),
+    radial-gradient(900px 520px at 70% 60%, rgba(20,70,160,.14), transparent 65%),
+
+    /* hex outline pattern (SVG) */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='208' viewBox='0 0 240 208'%3E%3Cg fill='none' stroke='%2397c7ff' stroke-opacity='.22' stroke-width='2'%3E%3Cpath d='M60 4l48 28v56l-48 28-48-28V32z'/%3E%3Cpath d='M180 4l48 28v56l-48 28-48-28V32z'/%3E%3Cpath d='M120 60l48 28v56l-48 28-48-28V88z'/%3E%3Cpath d='M0 60l48 28v56l-48 28-48-28V88z'/%3E%3Cpath d='M240 60l48 28v56l-48 28-48-28V88z'/%3E%3C/g%3E%3C/svg%3E");
+
+  background-repeat: no-repeat, no-repeat, no-repeat, repeat;
+  background-size: cover, cover, cover, 240px 208px;
+  background-position: center, center, center, 0 0;
+  background-attachment: fixed;
+
+  opacity: 1;
+}
+
+/* Vignette + sparkles */
+body[data-theme="grifballhub"]::after{
+  content:"";
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  z-index:-1;
+
+  background-image:
+    /* vignette */
+    radial-gradient(circle at 50% 45%, rgba(0,0,0,0) 35%, rgba(0,0,0,.45) 78%, rgba(0,0,0,.70) 100%),
+
+    /* tiny “stars” */
+    radial-gradient(1px 1px at 12% 22%, rgba(255,255,255,.35), transparent 2px),
+    radial-gradient(1px 1px at 28% 64%, rgba(255,255,255,.28), transparent 2px),
+    radial-gradient(1px 1px at 66% 18%, rgba(255,255,255,.25), transparent 2px),
+    radial-gradient(1px 1px at 82% 58%, rgba(255,255,255,.22), transparent 2px),
+    radial-gradient(1px 1px at 48% 80%, rgba(255,255,255,.18), transparent 2px);
+
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-attachment: fixed;
+  opacity: .9;
+}
+
+
+
+
 
       body[data-theme="grape"] {
         --app-bg: radial-gradient(circle at top left, #ede9fe, #c4b5fd 55%, #8b5cf6);
@@ -350,15 +417,15 @@
       }
 
       body[data-theme="war"] {
-        --app-bg: radial-gradient(circle at top left, #111827, #7f1d1d 75%, #991b1b);
-        --toolbar-bg: linear-gradient(135deg, rgba(39, 20, 17, 0.95), rgba(127, 29, 29, 0.78));
+        --app-bg: radial-gradient(circle at top left, #111827, #7f1d1d 75%, #1f1515);
+        --toolbar-bg: linear-gradient(135deg, rgba(0, 0, 0, 0.95), rgba(110, 49, 49, 0.78));
         --toolbar-text: #fee2e2;
         --panel-bg: rgba(53, 27, 68, 0.966);
-        --panel-border: rgba(255, 0, 0, 0.74);
-        --hint-bg: rgba(17, 24, 39, 0.7);
+        --panel-border: rgba(70, 16, 16, 0.74);
+        --hint-bg: rgba(15, 27, 54, 0.7);
         --field-border: rgba(255, 0, 0, 0.795);
         --field-bg: #111827;
-        --goal-outline: rgba(255, 68, 230, 0.705);
+        --goal-outline: rgba(17, 2, 2, 0.705);
       }
 
       body[data-theme="fruit-chew"] {
@@ -1583,6 +1650,7 @@
     <main class="app" aria-labelledby="appTitle">
       <div class="toolbar" role="group" aria-label="Drawing controls">
         <h1 id="appTitle">Grifmaps</h1>
+        <button type="button" id="learnPageButton">Learning Hub (WiP)</button>
 
         <button type="button" data-mode="move" class="active">Move Pieces</button>
         <button type="button" data-mode="draw">Draw Routes</button>
@@ -1731,6 +1799,7 @@
     <script>
       const field = document.getElementById("field");
       const canvas = document.getElementById("drawingCanvas");
+      const learnPageButton = document.getElementById("learnPageButton");
       const colorPicker = document.getElementById("colorPicker");
       const brushSizeControl = document.getElementById("brushSize");
       const clearButton = document.getElementById("clearCanvas");
@@ -1746,6 +1815,13 @@
       const challengeModal = document.getElementById("challengeModal");
       const challengeLevels = document.getElementById("challengeLevels");
       const challengeClose = document.getElementById("challengeClose");
+
+      if (learnPageButton) {
+        learnPageButton.addEventListener("click", () => {
+          window.location.href = "/learn/";
+        });
+      }
+
       const challengeLevelsView = document.getElementById("challengeLevelsView");
       const challengeQuestionView = document.getElementById("challengeQuestionView");
       const challengeQuestionTitle = document.getElementById("challengeQuestionTitle");
@@ -2990,8 +3066,7 @@
           setMode("draw");
         } else if (key === "m") {
           setMode("move");
-        } else if (key === "r") {
-          setMode("rotate");
+      
         }
       });
 
@@ -3025,6 +3100,7 @@
         { value: "light", label: "Light", swatch: "#e2e8f0", text: "#0f172a" },
         
         { value: "bingsu", label: "Bingsu", swatch: "#e2e8f0", text: "#334155" },
+        { value: "iv-clover", label: "IV Clover", swatch: "#64748b", text: "#1e293b" },
         { value: "macroblank", label: "Macroblank", swatch: "#cbd5f5", text: "#1e293b" },
         { value: "fruit-chew", label: "Fruit Chew", swatch: "#e2e8f0", text: "#4c1d95" },
         { value: "peaches", label: "Peaches", swatch: "#fed7aa", text: "#9a3412" },
@@ -3035,7 +3111,7 @@
         { value: "mizu", label: "Mizu", swatch: "#bae6fd", text: "#1e3a8a" },
         { value: "tiramisu", label: "Tiramisu", swatch: "#fef3c7", text: "#78350f" },
         { value: "bubblegum", label: "Bubblegum", swatch: "#fbcfe8", text: "#831843" },
-        { value: "cheesecake", label: "Cheesecake", swatch: "#fbcfe8", text: "#9d174d" },
+        { value: "cheesecake", label: "Cheesecake", swatch: "#F7EC0A", text: "#9d174d" },
         { value: "strawberry", label: "Strawberry", swatch: "#fda4af", text: "#9f1239" },
         { value: "pink-lemonade", label: "Pink Lemonade", swatch: "#fde68a", text: "#9f1239" },
         { value: "lavender", label: "Lavender", swatch: "#ddd6fe", text: "#4c1d95" },
@@ -3060,12 +3136,13 @@
         { value: "antimatter", label: "Antimatter", swatch: "#4c1d95", text: "#e0e7ff" },
         { value: "godspeed", label: "Godspeed", swatch: "#111827", text: "#fef3c7" },
         { value: "red-samurai", label: "Red Samurai", swatch: "#7f1d1d", text: "#fee2e2" },
-        { value: "for-rage", label: "For Rage", swatch: "#991b1b", text: "#ffe4e6" },
+        { value: "for-rage", label: "For Rage", swatch: "#FA350C", text: "#FFCBBF" },
         { value: "spiderman", label: "Spiderman", swatch: "#7f1d1d", text: "#fee2e2" },
-        { value: "war", label: "War", swatch: "#7f1d1d", text: "#fee2e2" },
+        { value: "grifballhub", label: "GrifballHub", swatch: "#2F167A", text: "#FFF903" },
+        { value: "war", label: "War", swatch: "#702A4F", text: "#fee2e2" },
         { value: "rainbow-trail", label: "Rainbow Trail", swatch: "#0f172a", text: "#f8fafc" },
         { value: "dark", label: "Dark", swatch: "#0f172a", text: "#e2e8f0" },
-        { value: "iv-clover", label: "IV Clover", swatch: "#64748b", text: "#1e293b" },
+        
         
       ];
 

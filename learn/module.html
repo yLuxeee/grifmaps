@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Grifmaps Learn Module</title>
+    <style>
+      body {
+        margin: 0;
+        font-family: Inter, "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: #f8fafc;
+        color: #0f172a;
+      }
+
+      .wrap {
+        width: min(900px, 92vw);
+        margin: 40px auto;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        padding: 24px;
+        box-shadow: 0 12px 28px rgba(15, 23, 42, 0.1);
+      }
+
+      h1 { margin-top: 0; }
+
+      .back {
+        display: inline-block;
+        margin-bottom: 16px;
+        color: #1d4ed8;
+        font-weight: 700;
+      }
+
+      .placeholder {
+        margin-top: 18px;
+        padding: 14px;
+        border-radius: 12px;
+        background: #eff6ff;
+        border: 1px solid #bfdbfe;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="wrap">
+      <a class="back" href="/learn/">← Back to Learn Course</a>
+      <h1 id="chapterTitle">Learning Module</h1>
+      <p>This is the dedicated module page for the selected chapter.</p>
+      <div class="placeholder">
+        Add module video, notes, and questionnaire content here.
+      </div>
+    </main>
+
+    <script>
+      const params = new URLSearchParams(window.location.search);
+      const chapterSlug = params.get("chapter") || "module";
+      const label = chapterSlug
+        .replace(/-/g, " ")
+        .replace(/\b\w/g, (char) => char.toUpperCase());
+      document.getElementById("chapterTitle").textContent = label;
+      document.title = `Grifmaps Learn Module · ${label}`;
+    </script>
+  </body>
+</html>

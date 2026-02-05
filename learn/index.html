@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Grifmaps Learn</title>
+    <style>
+      :root {
+        font-family: Inter, "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        color: #111827;
+        background: #f3f4f6;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: linear-gradient(180deg, #f8fafc, #e5e7eb);
+        min-height: 100vh;
+      }
+
+      .page {
+        width: min(1100px, 95vw);
+        margin: 0 auto;
+        padding: 28px 0 64px;
+      }
+
+      .hero {
+        background: #111827;
+        color: #f9fafb;
+        border-radius: 18px;
+        padding: 28px;
+        margin-bottom: 24px;
+      }
+
+      .hero h1 {
+        margin: 0 0 8px;
+        font-size: clamp(1.8rem, 3vw, 2.5rem);
+      }
+
+      .hero p {
+        margin: 0;
+        color: #d1d5db;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 16px;
+      }
+
+      .tier {
+        border-radius: 16px;
+        padding: 18px;
+        border: 2px solid rgba(0, 0, 0, 0.08);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+      }
+
+      .tier h2 {
+        margin: 0 0 10px;
+        font-size: 1.3rem;
+      }
+
+      .tier p {
+        margin-top: 0;
+        font-size: 0.95rem;
+      }
+
+      .beginner { background: #dcfce7; border-color: #22c55e; }
+      .advanced { background: #fef9c3; border-color: #eab308; }
+      .mastery { background: #fee2e2; border-color: #ef4444; }
+
+      ol {
+        padding-left: 1.25rem;
+        margin: 0;
+      }
+
+      li {
+        margin: 0.45rem 0;
+        line-height: 1.35;
+      }
+
+      .chapter-link {
+        color: inherit;
+        text-underline-offset: 3px;
+        text-decoration-thickness: 1.5px;
+        font-weight: 600;
+      }
+
+      .chapter-link:hover {
+        text-decoration-thickness: 2px;
+      }
+
+      .meta {
+        margin-top: 14px;
+        padding-top: 12px;
+        border-top: 1px solid rgba(0, 0, 0, 0.15);
+        font-size: 0.88rem;
+        color: #334155;
+      }
+
+      
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <section class="hero">
+        <h1>Learn Course</h1>
+        <p>A dedicated course area for videos, questionnaires, and progressive chapter training.</p>
+      </section>
+
+      <section class="grid">
+        <article class="tier beginner">
+          <h2>Beginner</h2>
+          <p>Foundation mechanics and game understanding.</p>
+          <ol>
+            <li><a class="chapter-link" href="/learn/module.html?chapter=beginner-intro">Beginner Intro</a></li>
+            <li><a class="chapter-link" href="/learn/module.html?chapter=chapter-1-how-to-play-defense">Chapter 1: How to Play Defense</a></li>
+            <li><a class="chapter-link" href="/learn/module.html?chapter=chapter-2-how-to-play-offense">Chapter 2: How to Play Offense</a></li>
+            <li><a class="chapter-link" href="/learn/module.html?chapter=chapter-3-spawnkilling">Chapter 3: Spawnkilling</a></li>
+            <li><a class="chapter-link" href="/learn/module.html?chapter=chapter-4-how-to-keep-the-ball">Chapter 4: How to Keep the Ball</a></li>
+            <li><a class="chapter-link" href="/learn/module.html?chapter=chapter-5-special-moves">Chapter 5: Special Moves</a></li>
+          </ol>
+          <div class="meta">Each chapter links to its own learning module page.</div>
+        </article>
+
+        <article class="tier advanced">
+          <h2>Advanced</h2>
+          <p>Higher-level team execution and tactical control.</p>
+          <ol>
+            <li><a class="chapter-link" href="/learn/module.html?chapter=advanced-intro">Advanced Intro</a></li>
+            <li><a class="chapter-link" href="/learn/module.html?chapter=chapter-6-basic-formations">Chapter 6: Basic Formations</a></li>
+            <li><a class="chapter-link" href="/learn/module.html?chapter=chapter-7-four-to-oh">Chapter 7: Four to Oh</a></li>
+            <li><a class="chapter-link" href="/learn/module.html?chapter=chapter-8-flanking-on-offense">Chapter 8: Flanking On Offense</a></li>
+            <li><a class="chapter-link" href="/learn/module.html?chapter=chapter-9-defensive-manuvers">Chapter 9: Defensive Manuvers</a></li>
+            <li><a class="chapter-link" href="/learn/module.html?chapter=chapter-10-on-the-plate">Chapter 10: On The Plate</a></li>
+            <li><a class="chapter-link" href="/learn/module.html?chapter=chapter-11-mentality">Chapter 11: Mentality</a></li>
+          </ol>
+          <div class="meta">Each chapter links to its own learning module page.</div>
+        </article>
+
+        <article class="tier mastery">
+          <h2>Mastery</h2>
+          <p>Elite-level decision making and advanced positioning.</p>
+          <ol>
+            <li><a class="chapter-link" href="/learn/module.html?chapter=mastery-intro">Mastery Intro</a></li>
+            <li><a class="chapter-link" href="/learn/module.html?chapter=chapter-12-2-great-battles">Chapter 12: 2 Great Battles</a></li>
+            <li><a class="chapter-link" href="/learn/module.html?chapter=chapter-13-inside-position">Chapter 13: Inside Position</a></li>
+            <li><a class="chapter-link" href="/learn/module.html?chapter=chapter-14-defense-mastery">Chapter 14: Defense Mastery</a></li>
+            <li><a class="chapter-link" href="/learn/module.html?chapter=chapter-15-prevention">Chapter 15: Prevention</a></li>
+            <li><a class="chapter-link" href="/learn/module.html?chapter=chapter-16-frame">Chapter 16: Frame</a></li>
+            <li><a class="chapter-link" href="/learn/module.html?chapter=chapter-17-kuzushi">Chapter 17: Kuzushi</a></li>
+            <li><a class="chapter-link" href="/learn/module.html?chapter=chapter-18-isolation">Chapter 18: Isolation</a></li>
+            <li><a class="chapter-link" href="/learn/module.html?chapter=chapter-19-sacrifice">Chapter 19: Sacrifice</a></li>
+            <li><a class="chapter-link" href="/learn/module.html?chapter=chapter-20-tagalong">Chapter 20: Tagalong</a></li>
+            <li><a class="chapter-link" href="/learn/module.html?chapter=chapter-21-extra-notes">Chapter 21: Extra Notes</a></li>
+          </ol>
+          <div class="meta">Each chapter links to its own learning module page.</div>
+        </article>
+      </section>
+
+      
+    </main>
+  </body>
+</html>
