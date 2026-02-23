@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Grifmaps Learn</title>
+    <title>Study</title>
     <style>
       :root {
         font-family: Inter, "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
@@ -45,6 +45,24 @@
         color: #d1d5db;
       }
 
+      .back-button {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 18px;
+        padding: 10px 14px;
+        border-radius: 10px;
+        border: 1px solid #374151;
+        color: #f9fafb;
+        text-decoration: none;
+        font-weight: 600;
+        background: rgba(255, 255, 255, 0.08);
+      }
+
+      .back-button:hover {
+        background: rgba(255, 255, 255, 0.16);
+      }
+
       .grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -52,6 +70,7 @@
       }
 
       .tier {
+        position: relative;
         border-radius: 16px;
         padding: 18px;
         border: 2px solid rgba(0, 0, 0, 0.08);
@@ -101,6 +120,31 @@
         color: #334155;
       }
 
+      .locked {
+        filter: blur(3.8px) saturate(0.8);
+      }
+
+      .locked::after {
+        content: "Locked";
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        font-size: 0.78rem;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        padding: 4px 7px;
+        border-radius: 999px;
+        color: #1f2937;
+        background: rgba(255, 255, 255, 0.72);
+        border: 1px solid rgba(17, 24, 39, 0.2);
+      }
+
+      .locked .chapter-link {
+        pointer-events: none;
+        cursor: default;
+        text-decoration: none;
+      }
+
       
     </style>
   </head>
@@ -109,6 +153,7 @@
       <section class="hero">
         <h1>Learn Course</h1>
         <p>A dedicated course area for videos, questionnaires, and progressive chapter training.</p>
+        <a class="back-button" href="/">← Back to Main Page</a>
       </section>
 
       <section class="grid">
@@ -126,7 +171,7 @@
           <div class="meta">Each chapter links to its own learning module page.</div>
         </article>
 
-        <article class="tier advanced">
+        <article class="tier advanced locked" aria-disabled="true">
           <h2>Advanced</h2>
           <p>Higher-level team execution and tactical control.</p>
           <ol>
@@ -141,7 +186,7 @@
           <div class="meta">Each chapter links to its own learning module page.</div>
         </article>
 
-        <article class="tier mastery">
+        <article class="tier mastery locked" aria-disabled="true">
           <h2>Mastery</h2>
           <p>Elite-level decision making and advanced positioning.</p>
           <ol>
