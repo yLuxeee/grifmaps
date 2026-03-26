@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Grifmaps Game Builder</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: radial-gradient(circle at top, #1e293b 0%, #0f172a 55%, #020617 100%);
+        --panel: rgba(15, 23, 42, 0.88);
+        --panel-strong: rgba(15, 23, 42, 0.96);
+        --border: rgba(148, 163, 184, 0.24);
+        --text: #e2e8f0;
+        --muted: #94a3b8;
+        --accent: #38bdf8;
+        --accent-strong: #0ea5e9;
+        --success: #22c55e;
+        --warning: #f59e0b;
+        --danger: #f87171;
+        --chip: rgba(30, 41, 59, 0.95);
+        --shadow: 0 24px 60px rgba(2, 6, 23, 0.45);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: Inter, "Segoe UI", system-ui, sans-serif;
+        color: var(--text);
+        background: var(--bg);
+      }
+
+      a {
+        color: inherit;
+      }
+
+      .page {
+        width: min(1200px, calc(100% - 32px));
+        margin: 0 auto;
+        padding: 32px 0 48px;
+      }
+
+      .hero,
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 24px;
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(16px);
+      }
+
+      .hero {
+        padding: 28px;
+        display: grid;
+        gap: 20px;
+      }
+
+      .hero__top {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+      }
+
+      .eyebrow {
+        margin: 0 0 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        color: var(--accent);
+        font-size: 0.78rem;
+        font-weight: 700;
+      }
+
+      h1,
+      h2,
+      h3,
+      p {
+        margin: 0;
+      }
+
+      .hero h1 {
+        font-size: clamp(2rem, 4vw, 3.5rem);
+        line-height: 1;
+      }
+
+      .hero p {
+        color: var(--muted);
+        max-width: 72ch;
+      }
+
+      .hero__actions,
+      .roller__actions,
+      .result__actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+      }
+
+      button {
+        appearance: none;
+        border: 0;
+        border-radius: 999px;
+        padding: 12px 18px;
+        font: inherit;
+        font-weight: 700;
+        cursor: pointer;
+        transition: transform 140ms ease, opacity 140ms ease, background 140ms ease;
+      }
+
+      button:hover {
+        transform: translateY(-1px);
+      }
+
+      button:disabled {
+        cursor: not-allowed;
+        opacity: 0.5;
+        transform: none;
+      }
+
+      .button-primary {
+        background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+        color: #082f49;
+      }
+
+      .button-secondary {
+        background: rgba(51, 65, 85, 0.95);
+        color: var(--text);
+        border: 1px solid rgba(148, 163, 184, 0.18);
+      }
+
+      .layout {
+        display: grid;
+        gap: 24px;
+        margin-top: 24px;
+        grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr);
+      }
+
+      .panel {
+        padding: 24px;
+      }
+
+      .panel__header {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 18px;
+      }
+
+      .status-chip,
+      .assignment-chip,
+      .metric {
+        background: var(--chip);
+        border: 1px solid var(--border);
+        border-radius: 18px;
+      }
+
+      .roller {
+        display: grid;
+        gap: 18px;
+      }
+
+      .roller__player {
+        display: grid;
+        gap: 10px;
+        padding: 28px;
+        border-radius: 24px;
+        background: linear-gradient(180deg, rgba(14, 165, 233, 0.12), rgba(15, 23, 42, 0.88));
+        border: 1px solid rgba(56, 189, 248, 0.28);
+      }
+
+      .roller__player-name {
+        font-size: clamp(2.5rem, 7vw, 4.75rem);
+        font-weight: 800;
+        letter-spacing: -0.04em;
+      }
+
+      .roller__caption,
+      .muted {
+        color: var(--muted);
+      }
+
+      .status-grid,
+      .metrics,
+      .assignment-list,
+      .category-grid {
+        display: grid;
+        gap: 12px;
+      }
+
+      .status-grid,
+      .metrics {
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      }
+
+      .status-chip,
+      .metric,
+      .assignment-chip {
+        padding: 14px 16px;
+      }
+
+      .status-chip strong,
+      .metric strong,
+      .assignment-chip strong {
+        display: block;
+        margin-bottom: 4px;
+      }
+
+      .category-grid {
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      }
+
+      .category-grid button {
+        border-radius: 18px;
+        padding: 16px;
+        text-align: left;
+        background: rgba(15, 23, 42, 0.92);
+        color: var(--text);
+        border: 1px solid rgba(148, 163, 184, 0.16);
+      }
+
+      .category-grid button small {
+        display: block;
+        margin-top: 6px;
+        color: var(--muted);
+        font-weight: 500;
+      }
+
+      .category-grid button.is-used {
+        background: rgba(34, 197, 94, 0.15);
+        border-color: rgba(34, 197, 94, 0.28);
+      }
+
+      .result-card {
+        display: grid;
+        gap: 16px;
+        padding: 20px;
+        border-radius: 22px;
+        background: linear-gradient(180deg, rgba(56, 189, 248, 0.16), rgba(15, 23, 42, 0.96));
+        border: 1px solid rgba(56, 189, 248, 0.2);
+      }
+
+      .result-rank {
+        font-size: clamp(3rem, 9vw, 5.2rem);
+        font-weight: 900;
+        letter-spacing: -0.06em;
+      }
+
+      .assignment-list {
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      th,
+      td {
+        text-align: left;
+        padding: 12px 10px;
+        border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+        vertical-align: middle;
+      }
+
+      th {
+        color: var(--muted);
+        font-size: 0.82rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        position: sticky;
+        top: 0;
+        background: var(--panel-strong);
+      }
+
+      .stats-table-wrap {
+        overflow: auto;
+        max-height: 720px;
+        border-radius: 18px;
+        border: 1px solid rgba(148, 163, 184, 0.12);
+      }
+
+      input[type="number"] {
+        width: 76px;
+        padding: 10px 12px;
+        border-radius: 12px;
+        border: 1px solid rgba(148, 163, 184, 0.22);
+        background: rgba(15, 23, 42, 0.96);
+        color: var(--text);
+        font: inherit;
+      }
+
+      .hint,
+      .empty-state {
+        padding: 16px 18px;
+        border-radius: 18px;
+        background: rgba(30, 41, 59, 0.75);
+        color: var(--muted);
+        border: 1px solid rgba(148, 163, 184, 0.12);
+      }
+
+      .empty-state {
+        text-align: center;
+      }
+
+      @media (max-width: 980px) {
+        .layout {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 720px) {
+        .page {
+          width: min(100% - 20px, 1200px);
+          padding-top: 20px;
+        }
+
+        .hero,
+        .panel {
+          padding: 18px;
+        }
+
+        .roller__player {
+          padding: 20px;
+        }
+
+        .roller__player-name {
+          font-size: 2.5rem;
+        }
+
+        .category-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <section class="hero">
+        <div class="hero__top">
+          <div>
+            <p class="eyebrow">/game</p>
+            <h1>Build your Grifball lineup score.</h1>
+            <p>
+              Roll through the player pool, hit stop when you land on somebody, assign them to an open
+              category, and keep going until all seven roles are filled. Then the page turns the total
+              stat value into a placement from <strong>#1</strong> to <strong>#30</strong>.
+            </p>
+          </div>
+          <div class="hero__actions">
+            <a href="/">
+              <button type="button" class="button-secondary">Back to map</button>
+            </a>
+            <button type="button" class="button-secondary" id="resetStatsButton">Reset stats</button>
+          </div>
+        </div>
+        <div class="status-grid">
+          <div class="status-chip">
+            <strong>How it works</strong>
+            Start rolling, stop on a player, assign one of the open categories, then repeat.
+          </div>
+          <div class="status-chip">
+            <strong>Editable ratings</strong>
+            Every player has all 7 stats editable in the table below and saved to your browser.
+          </div>
+          <div class="status-chip">
+            <strong>Scoring</strong>
+            The team score is the sum of the selected player stat for each category, scaled to rank #1-#30.
+          </div>
+        </div>
+      </section>
+
+      <section class="layout">
+        <div class="panel">
+          <div class="panel__header">
+            <div>
+              <p class="eyebrow">Lineup Roller</p>
+              <h2>Roll, stop, and assign.</h2>
+            </div>
+            <div class="metrics" style="grid-template-columns: repeat(2, minmax(140px, 1fr)); width: min(100%, 320px);">
+              <div class="metric">
+                <strong id="filledCount">0 / 7</strong>
+                Categories filled
+              </div>
+              <div class="metric">
+                <strong id="rollState">Idle</strong>
+                Roller status
+              </div>
+            </div>
+          </div>
+
+          <div class="roller">
+            <div class="roller__player">
+              <span class="roller__caption">Current player</span>
+              <div class="roller__player-name" id="currentPlayerName">S1lent</div>
+              <p class="muted" id="rollerMessage">Press start to begin cycling through the roster.</p>
+            </div>
+
+            <div class="roller__actions">
+              <button type="button" class="button-primary" id="startRollButton">Start roll</button>
+              <button type="button" class="button-secondary" id="stopRollButton" disabled>Stop roll</button>
+              <button type="button" class="button-secondary" id="nextRoundButton" disabled>Ready for next roll</button>
+              <button type="button" class="button-secondary" id="resetAssignmentsButton">Clear categories</button>
+            </div>
+
+            <div>
+              <p class="eyebrow">Open categories</p>
+              <div class="category-grid" id="categoryGrid"></div>
+            </div>
+
+            <div>
+              <p class="eyebrow">Selected lineup</p>
+              <div class="assignment-list" id="assignmentList"></div>
+            </div>
+
+            <div class="result-card" id="resultCard">
+              <div>
+                <p class="eyebrow">Projected placement</p>
+                <div class="result-rank" id="resultRank">--</div>
+                <p class="muted" id="resultSummary">
+                  Fill all seven categories to calculate the placement.
+                </p>
+              </div>
+              <div class="metrics">
+                <div class="metric">
+                  <strong id="rawScore">0</strong>
+                  Raw score
+                </div>
+                <div class="metric">
+                  <strong id="scorePercent">0%</strong>
+                  Score strength
+                </div>
+                <div class="metric">
+                  <strong id="bestPossible">700</strong>
+                  Maximum score
+                </div>
+              </div>
+              <div class="result__actions">
+                <button type="button" class="button-secondary" id="autofillDemoButton">Autofill best available</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel__header">
+            <div>
+              <p class="eyebrow">Player ratings</p>
+              <h2>Edit the stat sheet.</h2>
+            </div>
+          </div>
+          <p class="hint">
+            Ratings are from <strong>0</strong> to <strong>100</strong>. Changes save automatically in your browser.
+            Update these values any time and the placement recalculates instantly.
+          </p>
+          <div class="stats-table-wrap" style="margin-top: 16px;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Player</th>
+                  <th>Tanking</th>
+                  <th>Running</th>
+                  <th>Playmaking</th>
+                  <th>Sword</th>
+                  <th>IQ</th>
+                  <th>Defense</th>
+                  <th>Ping</th>
+                </tr>
+              </thead>
+              <tbody id="statsTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      const STORAGE_KEY = "grifmaps-game-player-stats-v1";
+      const PLAYER_NAMES = [
+        "S1lent",
+        "Sab",
+        "Luxe",
+        "Mav",
+        "ASpence",
+        "Shrek",
+        "Cosmos",
+        "Chemical",
+        "Priest",
+        "Poptart",
+        "Reign",
+        "Dhmon",
+        "Novice",
+        "Solace",
+        "Snipez",
+        "Angel",
+      ];
+
+      const CATEGORIES = ["Tanking", "Running", "Playmaking", "Sword", "IQ", "Defense", "Ping"];
+
+      const DEFAULT_STATS = {
+        S1lent: { Tanking: 91, Running: 82, Playmaking: 88, Sword: 90, IQ: 93, Defense: 87, Ping: 71 },
+        Sab: { Tanking: 85, Running: 92, Playmaking: 81, Sword: 78, IQ: 84, Defense: 83, Ping: 76 },
+        Luxe: { Tanking: 75, Running: 89, Playmaking: 86, Sword: 79, IQ: 82, Defense: 77, Ping: 80 },
+        Mav: { Tanking: 82, Running: 84, Playmaking: 90, Sword: 76, IQ: 88, Defense: 81, Ping: 74 },
+        ASpence: { Tanking: 88, Running: 77, Playmaking: 80, Sword: 91, IQ: 86, Defense: 84, Ping: 72 },
+        Shrek: { Tanking: 94, Running: 70, Playmaking: 73, Sword: 88, IQ: 78, Defense: 90, Ping: 69 },
+        Cosmos: { Tanking: 73, Running: 90, Playmaking: 89, Sword: 77, IQ: 83, Defense: 75, Ping: 85 },
+        Chemical: { Tanking: 80, Running: 79, Playmaking: 87, Sword: 85, IQ: 91, Defense: 82, Ping: 73 },
+        Priest: { Tanking: 84, Running: 72, Playmaking: 78, Sword: 92, IQ: 87, Defense: 88, Ping: 68 },
+        Poptart: { Tanking: 76, Running: 88, Playmaking: 79, Sword: 81, IQ: 80, Defense: 74, Ping: 83 },
+        Reign: { Tanking: 86, Running: 83, Playmaking: 84, Sword: 87, IQ: 89, Defense: 85, Ping: 75 },
+        Dhmon: { Tanking: 79, Running: 81, Playmaking: 85, Sword: 83, IQ: 84, Defense: 80, Ping: 78 },
+        Novice: { Tanking: 72, Running: 86, Playmaking: 77, Sword: 75, IQ: 76, Defense: 71, Ping: 88 },
+        Solace: { Tanking: 83, Running: 80, Playmaking: 82, Sword: 86, IQ: 90, Defense: 84, Ping: 79 },
+        Snipez: { Tanking: 74, Running: 87, Playmaking: 83, Sword: 84, IQ: 79, Defense: 76, Ping: 86 },
+        Angel: { Tanking: 81, Running: 85, Playmaking: 88, Sword: 82, IQ: 85, Defense: 78, Ping: 81 },
+      };
+
+      const currentPlayerName = document.getElementById("currentPlayerName");
+      const rollerMessage = document.getElementById("rollerMessage");
+      const startRollButton = document.getElementById("startRollButton");
+      const stopRollButton = document.getElementById("stopRollButton");
+      const nextRoundButton = document.getElementById("nextRoundButton");
+      const resetAssignmentsButton = document.getElementById("resetAssignmentsButton");
+      const resetStatsButton = document.getElementById("resetStatsButton");
+      const categoryGrid = document.getElementById("categoryGrid");
+      const assignmentList = document.getElementById("assignmentList");
+      const filledCount = document.getElementById("filledCount");
+      const rollState = document.getElementById("rollState");
+      const resultRank = document.getElementById("resultRank");
+      const resultSummary = document.getElementById("resultSummary");
+      const rawScore = document.getElementById("rawScore");
+      const scorePercent = document.getElementById("scorePercent");
+      const bestPossible = document.getElementById("bestPossible");
+      const statsTableBody = document.getElementById("statsTableBody");
+      const autofillDemoButton = document.getElementById("autofillDemoButton");
+
+      let playerStats = loadStats();
+      let assignments = {};
+      let currentPlayerIndex = 0;
+      let currentStoppedPlayer = null;
+      let rollerInterval = null;
+      let canAssignCategory = false;
+
+      function cloneDefaultStats() {
+        return JSON.parse(JSON.stringify(DEFAULT_STATS));
+      }
+
+      function loadStats() {
+        try {
+          const saved = window.localStorage.getItem(STORAGE_KEY);
+          if (!saved) return cloneDefaultStats();
+          const parsed = JSON.parse(saved);
+          const merged = cloneDefaultStats();
+          PLAYER_NAMES.forEach((player) => {
+            CATEGORIES.forEach((category) => {
+              const value = parsed?.[player]?.[category];
+              if (Number.isFinite(value)) {
+                merged[player][category] = clampStat(value);
+              }
+            });
+          });
+          return merged;
+        } catch (error) {
+          return cloneDefaultStats();
+        }
+      }
+
+      function saveStats() {
+        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(playerStats));
+      }
+
+      function clampStat(value) {
+        return Math.max(0, Math.min(100, Math.round(Number(value) || 0)));
+      }
+
+      function setCurrentPlayer(index) {
+        currentPlayerIndex = ((index % PLAYER_NAMES.length) + PLAYER_NAMES.length) % PLAYER_NAMES.length;
+        currentPlayerName.textContent = PLAYER_NAMES[currentPlayerIndex];
+      }
+
+      function startRoll() {
+        if (Object.keys(assignments).length === CATEGORIES.length) {
+          rollerMessage.textContent = "All seven categories are filled. Clear or adjust the lineup to roll again.";
+          return;
+        }
+        if (rollerInterval) return;
+        canAssignCategory = false;
+        currentStoppedPlayer = null;
+        rollerInterval = window.setInterval(() => {
+          setCurrentPlayer(currentPlayerIndex + 1);
+        }, 95);
+        rollState.textContent = "Rolling";
+        rollerMessage.textContent = "The roster is cycling. Hit stop to lock in the current player.";
+        startRollButton.disabled = true;
+        stopRollButton.disabled = false;
+        nextRoundButton.disabled = true;
+        renderCategories();
+      }
+
+      function stopRoll() {
+        if (!rollerInterval) return;
+        window.clearInterval(rollerInterval);
+        rollerInterval = null;
+        currentStoppedPlayer = PLAYER_NAMES[currentPlayerIndex];
+        canAssignCategory = true;
+        rollState.textContent = "Stopped";
+        rollerMessage.textContent = `${currentStoppedPlayer} is locked in. Pick one of the remaining categories below.`;
+        startRollButton.disabled = true;
+        stopRollButton.disabled = true;
+        nextRoundButton.disabled = false;
+        renderCategories();
+      }
+
+      function prepareNextRound() {
+        if (rollerInterval) return;
+        if (canAssignCategory) {
+          rollerMessage.textContent = `Assign a category to ${currentStoppedPlayer} before moving on.`;
+          return;
+        }
+        if (Object.keys(assignments).length === CATEGORIES.length) {
+          rollerMessage.textContent = "All categories are filled. Update stats or clear categories to start over.";
+          return;
+        }
+        rollState.textContent = "Idle";
+        rollerMessage.textContent = "Ready for another roll. Hit start when you want the next player cycle.";
+        startRollButton.disabled = false;
+        stopRollButton.disabled = true;
+        nextRoundButton.disabled = true;
+      }
+
+      function clearAssignments() {
+        assignments = {};
+        currentStoppedPlayer = null;
+        canAssignCategory = false;
+        if (rollerInterval) {
+          window.clearInterval(rollerInterval);
+          rollerInterval = null;
+        }
+        rollState.textContent = "Idle";
+        rollerMessage.textContent = "Categories cleared. Press start to begin rolling again.";
+        startRollButton.disabled = false;
+        stopRollButton.disabled = true;
+        nextRoundButton.disabled = true;
+        renderAssignments();
+        renderCategories();
+        updateScore();
+      }
+
+      function assignCategory(category) {
+        if (!canAssignCategory || !currentStoppedPlayer || assignments[category]) return;
+        assignments[category] = currentStoppedPlayer;
+        canAssignCategory = false;
+        const statValue = playerStats[currentStoppedPlayer][category];
+        rollerMessage.textContent = `${currentStoppedPlayer} is now assigned to ${category} (${statValue} rating).`;
+        if (Object.keys(assignments).length === CATEGORIES.length) {
+          rollState.textContent = "Complete";
+          startRollButton.disabled = true;
+          stopRollButton.disabled = true;
+          nextRoundButton.disabled = true;
+          rollerMessage.textContent = "All seven categories are filled. Your lineup score is ready below.";
+        }
+        renderAssignments();
+        renderCategories();
+        updateScore();
+      }
+
+      function computeScore() {
+        const total = CATEGORIES.reduce((sum, category) => {
+          const player = assignments[category];
+          if (!player) return sum;
+          return sum + playerStats[player][category];
+        }, 0);
+
+        const maxScore = CATEGORIES.length * 100;
+        const percentage = maxScore === 0 ? 0 : total / maxScore;
+        const rank = `#${Math.max(1, 30 - Math.round(percentage * 29))}`;
+
+        return { total, maxScore, percentage, rank };
+      }
+
+      function updateScore() {
+        const { total, maxScore, percentage, rank } = computeScore();
+        const filled = Object.keys(assignments).length;
+        bestPossible.textContent = String(maxScore);
+        rawScore.textContent = String(total);
+        scorePercent.textContent = `${Math.round(percentage * 100)}%`;
+        filledCount.textContent = `${filled} / ${CATEGORIES.length}`;
+
+        if (filled === CATEGORIES.length) {
+          resultRank.textContent = rank;
+          resultSummary.textContent = `Placement is based on the seven chosen category ratings totaling ${total} out of ${maxScore}.`;
+        } else {
+          resultRank.textContent = "--";
+          resultSummary.textContent = `Fill ${CATEGORIES.length - filled} more ${filled === CATEGORIES.length - 1 ? "category" : "categories"} to calculate the placement.`;
+        }
+      }
+
+      function renderCategories() {
+        categoryGrid.innerHTML = "";
+        CATEGORIES.forEach((category) => {
+          const button = document.createElement("button");
+          button.type = "button";
+          const assignedPlayer = assignments[category];
+          const isUsed = Boolean(assignedPlayer);
+          button.classList.toggle("is-used", isUsed);
+          button.disabled = isUsed || !canAssignCategory;
+          button.innerHTML = `<strong>${category}</strong><small>${assignedPlayer ? `${assignedPlayer} · ${playerStats[assignedPlayer][category]}` : "Open slot"}</small>`;
+          button.addEventListener("click", () => assignCategory(category));
+          categoryGrid.appendChild(button);
+        });
+      }
+
+      function renderAssignments() {
+        assignmentList.innerHTML = "";
+        const filledCategories = CATEGORIES.filter((category) => assignments[category]);
+        if (!filledCategories.length) {
+          assignmentList.innerHTML = '<div class="empty-state">No categories assigned yet.</div>';
+          return;
+        }
+
+        filledCategories.forEach((category) => {
+          const player = assignments[category];
+          const value = playerStats[player][category];
+          const item = document.createElement("div");
+          item.className = "assignment-chip";
+          item.innerHTML = `<strong>${category}</strong>${player}<br /><span class="muted">Rating: ${value}</span>`;
+          assignmentList.appendChild(item);
+        });
+      }
+
+      function renderStatsTable() {
+        statsTableBody.innerHTML = "";
+        PLAYER_NAMES.forEach((player) => {
+          const row = document.createElement("tr");
+          const nameCell = document.createElement("td");
+          nameCell.textContent = player;
+          row.appendChild(nameCell);
+
+          CATEGORIES.forEach((category) => {
+            const cell = document.createElement("td");
+            const input = document.createElement("input");
+            input.type = "number";
+            input.min = "0";
+            input.max = "100";
+            input.step = "1";
+            input.value = String(playerStats[player][category]);
+            input.setAttribute("aria-label", `${player} ${category}`);
+            input.addEventListener("change", () => {
+              input.value = String(clampStat(input.value));
+              playerStats[player][category] = clampStat(input.value);
+              saveStats();
+              renderCategories();
+              renderAssignments();
+              updateScore();
+            });
+            cell.appendChild(input);
+            row.appendChild(cell);
+          });
+
+          statsTableBody.appendChild(row);
+        });
+      }
+
+      function resetStats() {
+        playerStats = cloneDefaultStats();
+        saveStats();
+        renderStatsTable();
+        renderCategories();
+        renderAssignments();
+        updateScore();
+        rollerMessage.textContent = "Player ratings reset to defaults.";
+      }
+
+      function autofillBestAvailable() {
+        assignments = {};
+        CATEGORIES.forEach((category) => {
+          const bestPlayer = PLAYER_NAMES.reduce((best, player) => {
+            if (!best) return player;
+            return playerStats[player][category] > playerStats[best][category] ? player : best;
+          }, null);
+          assignments[category] = bestPlayer;
+        });
+        canAssignCategory = false;
+        currentStoppedPlayer = null;
+        if (rollerInterval) {
+          window.clearInterval(rollerInterval);
+          rollerInterval = null;
+        }
+        rollState.textContent = "Complete";
+        rollerMessage.textContent = "Autofill picked the highest-rated player for every category.";
+        startRollButton.disabled = true;
+        stopRollButton.disabled = true;
+        nextRoundButton.disabled = true;
+        renderAssignments();
+        renderCategories();
+        updateScore();
+      }
+
+      startRollButton.addEventListener("click", startRoll);
+      stopRollButton.addEventListener("click", stopRoll);
+      nextRoundButton.addEventListener("click", prepareNextRound);
+      resetAssignmentsButton.addEventListener("click", clearAssignments);
+      resetStatsButton.addEventListener("click", resetStats);
+      autofillDemoButton.addEventListener("click", autofillBestAvailable);
+
+      setCurrentPlayer(0);
+      renderStatsTable();
+      renderCategories();
+      renderAssignments();
+      updateScore();
+    </script>
+  </body>
+</html>

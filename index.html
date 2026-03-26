@@ -1034,6 +1034,20 @@ body[data-theme="grifballhub"]::after{
         opacity: 0.75;
       }
 
+      .play-layer {
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+      }
+
+      .play-arrow-line {
+        stroke-width: 2.6;
+        stroke-linecap: round;
+        opacity: 0.92;
+      }
+
+
       #drawingCanvas {
         inset: 0;
         width: 100%;
@@ -1650,10 +1664,13 @@ body[data-theme="grifballhub"]::after{
     <main class="app" aria-labelledby="appTitle">
       <div class="toolbar" role="group" aria-label="Drawing controls">
         <h1 id="appTitle">Grifmaps</h1>
-        <button type="button" id="learnPageButton">Learning Hub (WiP)</button>
+        
+        
 
         <button type="button" data-mode="move" class="active">Move Pieces</button>
         <button type="button" data-mode="draw">Draw Routes</button>
+
+        <button type="button" data-mode="arrows">Player Arrows</button>
         
 
         <label>
@@ -1681,6 +1698,10 @@ body[data-theme="grifballhub"]::after{
         <button type="button" id="quizModeToggle" aria-pressed="false">Quiz Mode</button>
         <button type="button" id="downloadPng">Download PNG</button>
         <button type="button" id="clearCanvas">Clear Drawing</button>
+        <button type="button" id="runPlayArrows">Send Players</button>
+        <label for="arrowSpeed">Arrow speed</label>
+        <input type="range" id="arrowSpeed" min="1" max="10" value="5" aria-label="Arrow movement speed" />
+        
 
         <span class="hint">Tip: Right-click a marker to toggle its goal line.</span>
       </div>
@@ -1732,15 +1753,15 @@ body[data-theme="grifballhub"]::after{
             <input type="text" id="saveName" placeholder="Position name" />
             <button type="button" id="savePosition">Save Position</button>
             <div class="saved-list" id="savedList" role="list"></div>
-            <div class="challenge-panel" aria-label="Challenge mode" hidden> 
-              <h2>Challenge mode</h2>
-              <button type="button" id="challengeModeButton">Challenge mode</button>
-            </div>
+            <button type="button" id="undoAction">Undo Last Action</button>
+            <button type="button" id="resetDots">Reset Dots</button>
+            
           </aside>
           <section class="field moving" id="field" aria-label="Interactive field">
             <canvas id="drawingCanvas" aria-hidden="true"></canvas>
 
             <svg class="connector-layer" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"></svg>
+            <svg class="play-layer" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"></svg>
 
             
             <div class="goal-point red" data-label="Goal" data-goal="red" data-x="4" data-y="50" style="left: 4%; top: 50%;" aria-hidden="true"></div>
@@ -1800,9 +1821,13 @@ body[data-theme="grifballhub"]::after{
       const field = document.getElementById("field");
       const canvas = document.getElementById("drawingCanvas");
       const learnPageButton = document.getElementById("learnPageButton");
+      const gamePageButton = document.getElementById("gamePageButton");
       const colorPicker = document.getElementById("colorPicker");
       const brushSizeControl = document.getElementById("brushSize");
       const clearButton = document.getElementById("clearCanvas");
+      
+      const runPlayArrowsButton = document.getElementById("runPlayArrows");
+      const arrowSpeedControl = document.getElementById("arrowSpeed");
       const dotSizeControl = document.getElementById("dotSize");
       const restoreDotsButton = document.getElementById("restoreDots");
       const spawnToggle = document.getElementById("spawnToggle");
@@ -1822,6 +1847,12 @@ body[data-theme="grifballhub"]::after{
         });
       }
 
+      if (gamePageButton) {
+        gamePageButton.addEventListener("click", () => {
+          window.location.href = "/game/";
+        });
+      }
+
       const challengeLevelsView = document.getElementById("challengeLevelsView");
       const challengeQuestionView = document.getElementById("challengeQuestionView");
       const challengeQuestionTitle = document.getElementById("challengeQuestionTitle");
@@ -1838,13 +1869,17 @@ body[data-theme="grifballhub"]::after{
       const markers = Array.from(document.querySelectorAll(".marker"));
       
       const connectorLayer = field.querySelector(".connector-layer");
+      const playLayer = field.querySelector(".play-layer");
       const markerConnections = new Map();
+      const markerPlayArrows = new Map();
       const settingsToggle = document.getElementById("settingsToggle");
       const settingsDrawer = document.getElementById("settingsDrawer");
       const settingsList = document.getElementById("settingsList");
       const saveNameInput = document.getElementById("saveName");
       const savePositionButton = document.getElementById("savePosition");
       const savedList = document.getElementById("savedList");
+      const undoActionButton = document.getElementById("undoAction");
+      const resetDotsButton = document.getElementById("resetDots");
       const ctx = canvas.getContext("2d");
 
       const goalTargets = {
@@ -1867,6 +1902,13 @@ body[data-theme="grifballhub"]::after{
       };
       let dragStartState = null;
       let dragStartPosition = null;
+      let drawStartState = null;
+      let arrowDraft = null;
+      let isRunningPlayArrows = false;
+      const initialMarkerPositions = markers.map((marker) => ({
+        x: parseFloat(marker.dataset.x),
+        y: parseFloat(marker.dataset.y),
+      }));
 
       
 
@@ -1888,6 +1930,24 @@ body[data-theme="grifballhub"]::after{
         ctx.drawImage(prev, 0, 0, prev.width, prev.height, 0, 0, canvas.width, canvas.height);
       }
 
+      function getCanvasSnapshot() {
+        if (!canvas.width || !canvas.height) return "";
+        return canvas.toDataURL("image/png");
+      }
+
+      function applyCanvasSnapshot(snapshot) {
+        if (!snapshot) {
+          clearCanvas();
+          return;
+        }
+        const image = new Image();
+        image.onload = () => {
+          clearCanvas();
+          ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+        };
+        image.src = snapshot;
+      }
+
       function pointerPercentages(event, rect) {
         return {
           x: ((event.clientX - rect.left) / rect.width) * 100,
@@ -1901,6 +1961,10 @@ body[data-theme="grifballhub"]::after{
         marker.dataset.x = xPercent.toFixed(2);
         marker.dataset.y = yPercent.toFixed(2);
         updateConnector(marker);
+        const existingArrow = markerPlayArrows.get(marker);
+        if (existingArrow) {
+          createOrUpdatePlayArrow(marker, existingArrow.points);
+        }
       }
 
       function refreshMarkerPositions() {
@@ -1961,6 +2025,183 @@ body[data-theme="grifballhub"]::after{
         markers.forEach(updateConnector);
       }
 
+      function normalizeArrowPoints(marker, points) {
+        const startX = parseFloat(marker.dataset.x);
+        const startY = parseFloat(marker.dataset.y);
+        const list = Array.isArray(points) ? points : [];
+        const normalized = list.map((point) => ({
+          x: clamp(Number(point.x), 0, 100),
+          y: clamp(Number(point.y), 0, 100),
+        }));
+        if (!normalized.length || Math.hypot(normalized[0].x - startX, normalized[0].y - startY) > 0.15) {
+          normalized.unshift({ x: startX, y: startY });
+        } else {
+          normalized[0] = { x: startX, y: startY };
+        }
+        return normalized;
+      }
+
+      function arrowPathLength(points) {
+        let total = 0;
+        for (let index = 1; index < points.length; index += 1) {
+          total += Math.hypot(points[index].x - points[index - 1].x, points[index].y - points[index - 1].y);
+        }
+        return total;
+      }
+
+      function pointAtDistance(points, distance) {
+        if (!points.length) return null;
+        if (distance <= 0) return points[0];
+        let traveled = 0;
+        for (let index = 1; index < points.length; index += 1) {
+          const start = points[index - 1];
+          const end = points[index];
+          const segment = Math.hypot(end.x - start.x, end.y - start.y);
+          if (!segment) continue;
+          if (traveled + segment >= distance) {
+            const ratio = (distance - traveled) / segment;
+            return {
+              x: start.x + (end.x - start.x) * ratio,
+              y: start.y + (end.y - start.y) * ratio,
+            };
+          }
+          traveled += segment;
+        }
+        return points[points.length - 1];
+      }
+
+      function createOrUpdatePlayArrow(marker, points) {
+        if (!playLayer || !marker) return;
+
+        let arrow = markerPlayArrows.get(marker);
+        if (!arrow) {
+          const line = document.createElementNS("http://www.w3.org/2000/svg", "path");
+          line.classList.add("play-arrow-line", "play-arrow-path");
+          const head = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+          playLayer.appendChild(line);
+          playLayer.appendChild(head);
+          arrow = { line, head, points: [] };
+          markerPlayArrows.set(marker, arrow);
+        }
+
+        arrow.points = normalizeArrowPoints(marker, points);
+        const pointsList = arrow.points;
+        const length = arrowPathLength(pointsList);
+
+        if (pointsList.length < 2 || length < 0.1) {
+          const start = pointsList[0] || { x: parseFloat(marker.dataset.x), y: parseFloat(marker.dataset.y) };
+          arrow.line.setAttribute("d", `M ${start.x} ${start.y}`);
+          arrow.head.setAttribute("points", "");
+          return;
+        }
+
+        const markerColor = marker.dataset.color || getDefaultMarkerColor(marker);
+        arrow.line.setAttribute("stroke", markerColor);
+        arrow.head.setAttribute("fill", markerColor);
+
+        arrow.line.setAttribute("fill", "none");
+        arrow.line.setAttribute("d", pointsList.map((point, index) => `${index === 0 ? "M" : "L"} ${point.x} ${point.y}`).join(" "));
+
+        const end = pointsList[pointsList.length - 1];
+        const previous = pointsList[pointsList.length - 2];
+        const dx = end.x - previous.x;
+        const dy = end.y - previous.y;
+        const segmentLength = Math.hypot(dx, dy) || 1;
+        const ux = dx / segmentLength;
+        const uy = dy / segmentLength;
+        const headSize = 2.2;
+        const baseX = end.x - ux * headSize;
+        const baseY = end.y - uy * headSize;
+        const wing = 1.1;
+        const leftX = baseX + (-uy * wing);
+        const leftY = baseY + (ux * wing);
+        const rightX = baseX - (-uy * wing);
+        const rightY = baseY - (ux * wing);
+
+        arrow.head.setAttribute("points", `${end.x},${end.y} ${leftX},${leftY} ${rightX},${rightY}`);
+      }
+
+      function removePlayArrow(marker) {
+        const arrow = markerPlayArrows.get(marker);
+        if (!arrow) return;
+        arrow.line.remove();
+        arrow.head.remove();
+        markerPlayArrows.delete(marker);
+      }
+
+      function refreshPlayArrows() {
+        markers.forEach((marker) => {
+          const arrow = markerPlayArrows.get(marker);
+          if (!arrow) return;
+          createOrUpdatePlayArrow(marker, arrow.points);
+        });
+      }
+
+      function clearPlayArrows() {
+        markers.forEach((marker) => removePlayArrow(marker));
+      }
+
+      function executePlayArrows() {
+        if (isRunningPlayArrows) return;
+
+        const moves = markers.map((marker) => {
+          const arrow = markerPlayArrows.get(marker);
+          if (!arrow || marker.classList.contains("is-hidden")) return null;
+          const points = normalizeArrowPoints(marker, arrow.points);
+          const pathLength = arrowPathLength(points);
+          if (points.length < 2 || pathLength < 0.1) return null;
+          return {
+            marker,
+            points,
+            pathLength,
+          };
+        }).filter(Boolean);
+
+        if (!moves.length) return;
+
+        const snapshot = getCurrentState();
+        const speedValue = arrowSpeedControl ? Number(arrowSpeedControl.value) : 5;
+        const speedScale = clamp(speedValue, 1, 10);
+        const unitsPerSecond = 7 + speedScale * 9;
+        const maxPathLength = Math.max(...moves.map((move) => move.pathLength), 1);
+        const duration = Math.max(320, (maxPathLength / unitsPerSecond) * 1000);
+        const started = performance.now();
+        isRunningPlayArrows = true;
+        if (runPlayArrowsButton) runPlayArrowsButton.disabled = true;
+        moves.forEach((move) => {
+          removePlayArrow(move.marker);
+        });
+
+        const tick = (now) => {
+          const elapsed = now - started;
+          const progress = clamp(elapsed / duration, 0, 1);
+          const eased = 1 - Math.pow(1 - progress, 3);
+
+          moves.forEach((move) => {
+            const currentPoint = pointAtDistance(move.points, move.pathLength * eased);
+            if (!currentPoint) return;
+            positionMarker(move.marker, currentPoint.x, currentPoint.y);
+          });
+
+          if (progress < 1) {
+            requestAnimationFrame(tick);
+            return;
+          }
+
+          moves.forEach((move) => {
+            const finalPoint = move.points[move.points.length - 1];
+            positionMarker(move.marker, finalPoint.x, finalPoint.y);
+            
+          });
+
+          pushHistory(snapshot);
+          isRunningPlayArrows = false;
+          if (runPlayArrowsButton) runPlayArrowsButton.disabled = false;
+        };
+
+        requestAnimationFrame(tick);
+      }
+
       function getMarkerState(marker) {
         return {
           x: parseFloat(marker.dataset.x),
@@ -1968,12 +2209,23 @@ body[data-theme="grifballhub"]::after{
           hidden: marker.classList.contains("is-hidden"),
           label: marker.dataset.label || "",
           color: marker.dataset.color || "",
+          highlight: marker.classList.contains("highlight"),
         };
       }
 
       function getCurrentState() {
         return {
           markers: markers.map((marker) => getMarkerState(marker)),
+
+          playArrows: markers.map((marker, index) => {
+            const arrow = markerPlayArrows.get(marker);
+            if (!arrow) return null;
+            return {
+              index,
+              points: (arrow.points || []).map((point) => ({ x: point.x, y: point.y })),
+            };
+          }).filter(Boolean),
+          drawing: getCanvasSnapshot(),
           
         };
       }
@@ -1981,8 +2233,8 @@ body[data-theme="grifballhub"]::after{
       function applyMarkerState(marker, state) {
         if (!state) return;
         positionMarker(marker, state.x, state.y);
-        marker.classList.toggle("is-hidden", Boolean(state.hidden));
-        marker.dataset.label = state.label || "";
+       
+        marker.classList.toggle("highlight", Boolean(state.highlight));
         if (state.color) {
           applyMarkerColor(marker, state.color);
         } else {
@@ -2002,9 +2254,25 @@ body[data-theme="grifballhub"]::after{
           if (!marker) return;
           applyMarkerState(marker, markerState);
         });
+
+        clearPlayArrows();
+        (state.playArrows || []).forEach((arrowState) => {
+          const marker = markers[arrowState.index];
+          if (!marker) return;
+          if (Array.isArray(arrowState.points) && arrowState.points.length) {
+            createOrUpdatePlayArrow(marker, arrowState.points);
+          } else if (typeof arrowState.endX === "number" && typeof arrowState.endY === "number") {
+            createOrUpdatePlayArrow(marker, [
+              { x: parseFloat(marker.dataset.x), y: parseFloat(marker.dataset.y) },
+              { x: Number(arrowState.endX), y: Number(arrowState.endY) },
+            ]);
+          }
+        });
         
         buildMarkerSettings();
         refreshConnectorPositions();
+        refreshPlayArrows();
+        applyCanvasSnapshot(state.drawing || "");
       }
 
       function pushHistory(snapshot) {
@@ -2210,6 +2478,53 @@ body[data-theme="grifballhub"]::after{
           exportCtx.stroke();
         });
 
+        markers.forEach((marker) => {
+          const arrow = markerPlayArrows.get(marker);
+          if (!arrow || marker.classList.contains("is-hidden")) return;
+          const points = normalizeArrowPoints(marker, arrow.points || []);
+          if (points.length < 2) return;
+
+          exportCtx.strokeStyle = marker.dataset.color || getDefaultMarkerColor(marker);
+          exportCtx.lineWidth = 3.2;
+          exportCtx.beginPath();
+          points.forEach((point, index) => {
+            const x = (point.x / 100) * rect.width;
+            const y = (point.y / 100) * rect.height;
+            if (index === 0) exportCtx.moveTo(x, y);
+            else exportCtx.lineTo(x, y);
+          });
+          exportCtx.stroke();
+
+          const end = points[points.length - 1];
+          const prev = points[points.length - 2];
+          const endX = (end.x / 100) * rect.width;
+          const endY = (end.y / 100) * rect.height;
+          const prevX = (prev.x / 100) * rect.width;
+          const prevY = (prev.y / 100) * rect.height;
+          const dx = endX - prevX;
+          const dy = endY - prevY;
+          const length = Math.hypot(dx, dy);
+          if (length < 1) return;
+
+          const ux = dx / length;
+          const uy = dy / length;
+          const headSize = 18;
+          const baseX = endX - ux * headSize;
+          const baseY = endY - uy * headSize;
+          const wing = 8;
+
+          
+
+          exportCtx.fillStyle = marker.dataset.color || getDefaultMarkerColor(marker);
+          exportCtx.beginPath();
+          exportCtx.moveTo(endX, endY);
+          exportCtx.lineTo(baseX + (-uy * wing), baseY + (ux * wing));
+          exportCtx.lineTo(baseX - (-uy * wing), baseY - (ux * wing));
+          exportCtx.closePath();
+          exportCtx.fill();
+        });
+
+
         const dotSize = getDotSizePixels();
         markers.forEach((marker, index) => {
           if (marker.classList.contains("is-hidden")) return;
@@ -2266,7 +2581,7 @@ body[data-theme="grifballhub"]::after{
 
         // Markers should not be draggable in draw mode
         markers.forEach((marker) => {
-          marker.style.pointerEvents = newMode === "move" || newMode === "rotate" ? "auto" : "none";
+          marker.style.pointerEvents = ["move", "rotate", "arrows"].includes(newMode) ? "auto" : "none";
         });
 
       
@@ -2281,6 +2596,7 @@ body[data-theme="grifballhub"]::after{
           const marker = event.currentTarget;
           const shouldHighlight = !marker.classList.contains("highlight");
           marker.classList.toggle("highlight", shouldHighlight);
+          syncMarkerVisual(marker);
           if (shouldHighlight) createConnector(marker);
           else removeConnector(marker);
           updateConnector(marker);
@@ -2294,6 +2610,23 @@ body[data-theme="grifballhub"]::after{
           const next = (current + 90) % 360;
           marker.dataset.rotation = String(next);
           marker.style.setProperty("--rotation", `${next}deg`);
+          return;
+        }
+
+        if (isRunningPlayArrows) return;
+
+        if (mode === "arrows") {
+          event.preventDefault();
+          const marker = event.currentTarget;
+          const rect = field.getBoundingClientRect();
+          const startState = getCurrentState();
+          const startX = parseFloat(marker.dataset.x);
+          const startY = parseFloat(marker.dataset.y);
+          const { x, y } = pointerPercentages(event, rect);
+          const points = [{ x: startX, y: startY }, { x, y }];
+          arrowDraft = { marker, pointerId: event.pointerId, startState, points };
+          createOrUpdatePlayArrow(marker, points);
+          marker.setPointerCapture(event.pointerId);
           return;
         }
 
@@ -2320,6 +2653,18 @@ body[data-theme="grifballhub"]::after{
       }
 
       function onMarkerPointerMove(event) {
+        if (arrowDraft && event.pointerId === arrowDraft.pointerId && event.currentTarget === arrowDraft.marker) {
+          const rect = field.getBoundingClientRect();
+          const { x, y } = pointerPercentages(event, rect);
+          const last = arrowDraft.points[arrowDraft.points.length - 1];
+          if (!last || Math.hypot(x - last.x, y - last.y) > 0.12) {
+            arrowDraft.points.push({ x, y });
+          } else {
+            arrowDraft.points[arrowDraft.points.length - 1] = { x, y };
+          }
+          createOrUpdatePlayArrow(arrowDraft.marker, arrowDraft.points);
+          return;
+        }
         if (!activeMarker || event.pointerId !== activePointerId) return;
 
         const rect = field.getBoundingClientRect();
@@ -2334,6 +2679,21 @@ body[data-theme="grifballhub"]::after{
       }
 
       function endMarkerDrag(event) {
+        if (arrowDraft && event.pointerId === arrowDraft.pointerId && event.currentTarget === arrowDraft.marker) {
+          event.currentTarget.releasePointerCapture(event.pointerId);
+          const arrow = markerPlayArrows.get(arrowDraft.marker);
+          if (!arrow || !arrow.points || arrow.points.length < 2 || arrowPathLength(arrow.points) < 1) {
+            removePlayArrow(arrowDraft.marker);
+          }
+          if (arrowDraft.startState) {
+            const after = getCurrentState();
+            if (JSON.stringify(after.playArrows) !== JSON.stringify(arrowDraft.startState.playArrows)) {
+              pushHistory(arrowDraft.startState);
+            }
+          }
+          arrowDraft = null;
+          return;
+        }
         if (event.pointerId !== activePointerId) return;
         activeMarker?.releasePointerCapture(activePointerId);
         if (activeMarker && dragStartState && dragStartPosition) {
@@ -2354,6 +2714,9 @@ body[data-theme="grifballhub"]::after{
       function startDrawing(event) {
         if (mode !== "draw") return;
         event.preventDefault();
+        if (!isDrawing) {
+          drawStartState = getCurrentState();
+        }
         isDrawing = true;
         lastPoint = getCanvasCoordinates(event);
       }
@@ -2376,7 +2739,14 @@ body[data-theme="grifballhub"]::after{
       }
 
       function stopDrawing() {
+        if (!isDrawing) return;
         isDrawing = false;
+        if (!drawStartState) return;
+        const afterState = getCurrentState();
+        if (afterState.drawing !== drawStartState.drawing) {
+          pushHistory(drawStartState);
+        }
+        drawStartState = null;
       }
 
       function getCanvasCoordinates(event) {
@@ -2429,14 +2799,23 @@ body[data-theme="grifballhub"]::after{
         return luminance > 0.6 ? "#0f172a" : "#f8fafc";
       }
 
-      function applyMarkerColor(marker, color, applyStyle = true) {
-        marker.dataset.color = color;
-        if (applyStyle) {
-          const highlight = adjustColor(color, 50);
-          const shade = adjustColor(color, -40);
-          marker.style.background = `radial-gradient(circle at 30% 30%, ${highlight}, ${shade} 65%)`;
-          marker.style.color = getReadableTextColor(color);
+      function syncMarkerVisual(marker) {
+        if (marker.classList.contains("highlight")) {
+          marker.style.background = "radial-gradient(circle at 30% 30%, #fef08a, #facc15 70%)";
+          marker.style.color = "#92400e";
+          return;
         }
+
+        const color = marker.dataset.color || getDefaultMarkerColor(marker);
+        const highlight = adjustColor(color, 50);
+        const shade = adjustColor(color, -40);
+        marker.style.background = `radial-gradient(circle at 30% 30%, ${highlight}, ${shade} 65%)`;
+        marker.style.color = getReadableTextColor(color);
+      }
+
+      function applyMarkerColor(marker, color) {
+        marker.dataset.color = color;
+        syncMarkerVisual(marker);
         updateConnector(marker);
       }
 
@@ -2486,6 +2865,7 @@ body[data-theme="grifballhub"]::after{
             marker.classList.toggle("is-hidden");
             if (marker.classList.contains("is-hidden")) {
               removeConnector(marker);
+              removePlayArrow(marker);
             } else if (marker.classList.contains("highlight")) {
               createConnector(marker);
             }
@@ -2510,7 +2890,7 @@ body[data-theme="grifballhub"]::after{
 
       function initializeMarkerColors() {
         markers.forEach((marker) => {
-          applyMarkerColor(marker, marker.dataset.color || getDefaultMarkerColor(marker), false);
+          applyMarkerColor(marker, marker.dataset.color || getDefaultMarkerColor(marker));
         });
       }
 
@@ -2752,7 +3132,20 @@ body[data-theme="grifballhub"]::after{
         applyBackgroundPreset(backgroundSelect.value);
       });
 
-      clearButton.addEventListener("click", clearCanvas);
+      clearButton.addEventListener("click", () => {
+        const snapshot = getCurrentState();
+        clearCanvas();
+        const afterState = getCurrentState();
+        if (afterState.drawing !== snapshot.drawing) {
+          pushHistory(snapshot);
+        }
+      });
+
+      if (runPlayArrowsButton) {
+        runPlayArrowsButton.addEventListener("click", executePlayArrows);
+      }
+
+      
 
       
 
@@ -2828,6 +3221,29 @@ body[data-theme="grifballhub"]::after{
 
       if (savePositionButton) {
         savePositionButton.addEventListener("click", saveCurrentPosition);
+      }
+
+      if (undoActionButton) {
+        undoActionButton.addEventListener("click", undo);
+      }
+
+      if (resetDotsButton) {
+        resetDotsButton.addEventListener("click", () => {
+          const snapshot = getCurrentState();
+          initialMarkerPositions.forEach((position, index) => {
+            const marker = markers[index];
+            if (!marker) return;
+            positionMarker(marker, position.x, position.y);
+            marker.classList.remove("is-hidden");
+          });
+          clearPlayArrows();
+          const afterState = getCurrentState();
+          if (JSON.stringify(afterState.markers) !== JSON.stringify(snapshot.markers)
+            || JSON.stringify(afterState.playArrows) !== JSON.stringify(snapshot.playArrows)) {
+            pushHistory(snapshot);
+          }
+          buildMarkerSettings();
+        });
       }
 
       const teamColorMap = {
@@ -3066,6 +3482,9 @@ body[data-theme="grifballhub"]::after{
           setMode("draw");
         } else if (key === "m") {
           setMode("move");
+
+        } else if (key === "a") {
+          setMode("arrows");
       
         }
       });
@@ -3075,6 +3494,7 @@ body[data-theme="grifballhub"]::after{
         refreshMarkerPositions();
         
         refreshConnectorPositions();
+        refreshPlayArrows();
 
         
       });
@@ -3094,6 +3514,7 @@ body[data-theme="grifballhub"]::after{
       refreshMarkerPositions();
       
       refreshConnectorPositions();
+      refreshPlayArrows();
       applyBackgroundPreset(backgroundSelect.value);
 
       const themeOptions = [
