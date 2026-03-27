@@ -1014,8 +1014,14 @@ body[data-theme="grifballhub"]::after{
         background-repeat: no-repeat;
       }
 
+      .field.vertical-court {
+        --field-width: min(72vw, 760px);
+        height: min(calc(var(--field-width) * 1.12), 980px);
+      }
+
       .field canvas,
       .connector-layer,
+      .play-layer,
       .goal-point,
       .marker {
         position: absolute;
@@ -1755,6 +1761,7 @@ body[data-theme="grifballhub"]::after{
             <div class="saved-list" id="savedList" role="list"></div>
             <button type="button" id="undoAction">Undo Last Action</button>
             <button type="button" id="resetDots">Reset Dots</button>
+            <button type="button" id="toggleCourtOrientation">Vertical Court</button>
             
           </aside>
           <section class="field moving" id="field" aria-label="Interactive field">
@@ -1794,7 +1801,7 @@ body[data-theme="grifballhub"]::after{
     </main>
     <footer>
       <span>
-        Grifmaps v1.2 · Made by yLuxe
+        Grifmaps v1.3 · Made by yLuxe
         
       </span>
     </footer>
@@ -1880,12 +1887,14 @@ body[data-theme="grifballhub"]::after{
       const savedList = document.getElementById("savedList");
       const undoActionButton = document.getElementById("undoAction");
       const resetDotsButton = document.getElementById("resetDots");
+      const toggleCourtOrientationButton = document.getElementById("toggleCourtOrientation");
       const ctx = canvas.getContext("2d");
 
       const goalTargets = {
         red: field.querySelector('[data-goal="red"]'),
         blue: field.querySelector('[data-goal="blue"]'),
       };
+      const staticFieldPoints = Array.from(field.querySelectorAll(".goal-point, .spawn-point"));
 
       let mode = "move";
       let activeMarker = null;
@@ -1905,6 +1914,7 @@ body[data-theme="grifballhub"]::after{
       let drawStartState = null;
       let arrowDraft = null;
       let isRunningPlayArrows = false;
+      let isVerticalCourt = false;
       const initialMarkerPositions = markers.map((marker) => ({
         x: parseFloat(marker.dataset.x),
         y: parseFloat(marker.dataset.y),
@@ -2070,6 +2080,57 @@ body[data-theme="grifballhub"]::after{
         return points[points.length - 1];
       }
 
+      function rotatePointToVertical(point) {
+        return { x: point.y, y: 100 - point.x };
+      }
+
+      function rotatePointToHorizontal(point) {
+        return { x: 100 - point.y, y: point.x };
+      }
+
+      function transformPointForOrientation(point, toVertical) {
+        return toVertical ? rotatePointToVertical(point) : rotatePointToHorizontal(point);
+      }
+
+      function positionStaticFieldPoint(element, xPercent, yPercent) {
+        element.dataset.x = xPercent.toFixed(2);
+        element.dataset.y = yPercent.toFixed(2);
+        element.style.left = `${xPercent}%`;
+        element.style.top = `${yPercent}%`;
+      }
+
+      function applyCourtOrientation(toVertical) {
+        if (isVerticalCourt === toVertical) return;
+        const snapshot = getCurrentState();
+
+        markers.forEach((marker) => {
+          const current = { x: parseFloat(marker.dataset.x), y: parseFloat(marker.dataset.y) };
+          const next = transformPointForOrientation(current, toVertical);
+          positionMarker(marker, next.x, next.y);
+
+          const arrow = markerPlayArrows.get(marker);
+          if (arrow && Array.isArray(arrow.points)) {
+            const nextPoints = arrow.points.map((point) => transformPointForOrientation(point, toVertical));
+            createOrUpdatePlayArrow(marker, nextPoints);
+          }
+        });
+
+        staticFieldPoints.forEach((pointElement) => {
+          const current = { x: parseFloat(pointElement.dataset.x), y: parseFloat(pointElement.dataset.y) };
+          const next = transformPointForOrientation(current, toVertical);
+          positionStaticFieldPoint(pointElement, next.x, next.y);
+        });
+
+        isVerticalCourt = toVertical;
+        field.classList.toggle("vertical-court", isVerticalCourt);
+        if (toggleCourtOrientationButton) {
+          toggleCourtOrientationButton.textContent = isVerticalCourt ? "Horizontal Court" : "Vertical Court";
+        }
+        refreshConnectorPositions();
+        refreshPlayArrows();
+        pushHistory(snapshot);
+      }
+
       function createOrUpdatePlayArrow(marker, points) {
         if (!playLayer || !marker) return;
 
@@ -2162,7 +2223,7 @@ body[data-theme="grifballhub"]::after{
         const snapshot = getCurrentState();
         const speedValue = arrowSpeedControl ? Number(arrowSpeedControl.value) : 5;
         const speedScale = clamp(speedValue, 1, 10);
-        const unitsPerSecond = 7 + speedScale * 9;
+        const unitsPerSecond = 7 + speedScale * 7;
         const maxPathLength = Math.max(...moves.map((move) => move.pathLength), 1);
         const duration = Math.max(320, (maxPathLength / unitsPerSecond) * 1000);
         const started = performance.now();
@@ -2225,6 +2286,11 @@ body[data-theme="grifballhub"]::after{
               points: (arrow.points || []).map((point) => ({ x: point.x, y: point.y })),
             };
           }).filter(Boolean),
+          fieldPoints: staticFieldPoints.map((pointElement) => ({
+            x: parseFloat(pointElement.dataset.x),
+            y: parseFloat(pointElement.dataset.y),
+          })),
+          isVerticalCourt,
           drawing: getCanvasSnapshot(),
           
         };
@@ -2268,6 +2334,18 @@ body[data-theme="grifballhub"]::after{
             ]);
           }
         });
+        if (Array.isArray(state.fieldPoints)) {
+          state.fieldPoints.forEach((pointState, index) => {
+            const pointElement = staticFieldPoints[index];
+            if (!pointElement || !pointState) return;
+            positionStaticFieldPoint(pointElement, Number(pointState.x), Number(pointState.y));
+          });
+        }
+        isVerticalCourt = Boolean(state.isVerticalCourt);
+        field.classList.toggle("vertical-court", isVerticalCourt);
+        if (toggleCourtOrientationButton) {
+          toggleCourtOrientationButton.textContent = isVerticalCourt ? "Horizontal Court" : "Vertical Court";
+        }
         
         buildMarkerSettings();
         refreshConnectorPositions();
@@ -3243,6 +3321,12 @@ body[data-theme="grifballhub"]::after{
             pushHistory(snapshot);
           }
           buildMarkerSettings();
+        });
+      }
+
+      if (toggleCourtOrientationButton) {
+        toggleCourtOrientationButton.addEventListener("click", () => {
+          applyCourtOrientation(!isVerticalCourt);
         });
       }
 
