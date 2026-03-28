@@ -1079,6 +1079,9 @@ body[data-theme="grifballhub"]::after{
 
       .marker::after {
         content: attr(data-label);
+        display: inline-block;
+        transform: rotate(calc(var(--rotation, 0deg) * -1));
+        transform-origin: center;
       }
 
       .field.arrow-piece-style .marker {
@@ -1086,7 +1089,13 @@ body[data-theme="grifballhub"]::after{
         height: calc(var(--dot-size) * 0.84);
         border-radius: 7px;
         clip-path: polygon(0 20%, 72% 20%, 72% 0, 100% 50%, 72% 100%, 72% 80%, 0 80%, 10% 50%);
-        background: linear-gradient(150deg, #030712, #0b1220 72%) !important;
+        background:
+          linear-gradient(
+            150deg,
+            var(--piece-accent-soft, #1d4ed8) 0 28%,
+            #070e1b 28% 72%,
+            var(--piece-accent-soft, #1d4ed8) 72% 100%
+          ) !important;
         border: 2px solid var(--piece-outline, #38bdf8);
         box-shadow:
           0 0 0 1px color-mix(in srgb, var(--piece-glow, #7dd3fc) 70%, white 30%),
@@ -1097,7 +1106,7 @@ body[data-theme="grifballhub"]::after{
       .field.arrow-piece-style .marker::after {
         font-size: 0.72rem;
         letter-spacing: 0.02em;
-        transform: translateX(-5px);
+        transform: translateX(-5px) rotate(calc(var(--rotation, 0deg) * -1));
       }
 
       .field.is-arrow-mode .marker {
@@ -1109,7 +1118,7 @@ body[data-theme="grifballhub"]::after{
 
       .field.is-arrow-mode .marker::after {
         font-size: 0.7rem;
-        transform: translateX(-6px);
+        transform: translateX(-6px) rotate(calc(var(--rotation, 0deg) * -1));
       }
 
       .marker.red {
@@ -1711,16 +1720,7 @@ body[data-theme="grifballhub"]::after{
         <label for="brushSize">Brush size</label>
         <input type="range" id="brushSize" min="2" max="24" value="8" aria-label="Brush Size" />
 
-        <label for="backgroundSelect">Background</label>
-        <select id="backgroundSelect" aria-label="Background preset">
-          <option value="grid" selected>Grid (Default)</option>
-          <option value="football">Football Field</option>
-          <option value="basketball">Basketball Court</option>
-          <option value="chalk">Chalkboard</option>
-          <option value="soccer">Soccer Pitch</option>
-          <option value="ice">Ice Rink</option>
-          <option value="infinite-sigma">Infinite Sigma</option>
-        </select>
+        
 
      
         
@@ -1729,8 +1729,7 @@ body[data-theme="grifballhub"]::after{
         <button type="button" id="downloadPng">Download PNG</button>
         <button type="button" id="clearCanvas">Clear Drawing</button>
         <button type="button" id="runPlayArrows">Send Players</button>
-        <label for="arrowSpeed">Live Speed</label>
-        <input type="range" id="arrowSpeed" min="1" max="10" value="5" aria-label="Arrow movement speed" />
+        
         
 
         <span class="hint">Right click a player to rotate.</span>
@@ -1758,6 +1757,22 @@ body[data-theme="grifballhub"]::after{
             <div class="settings-item">
               <label for="dotSize">Player Size</label>
               <input type="range" id="dotSize" min="28" max="90" value="52" />
+            </div>
+            <div class="settings-item">
+              <label for="backgroundSelect">Background</label>
+              <select id="backgroundSelect" aria-label="Background preset">
+                <option value="grid" selected>Grid (Default)</option>
+                <option value="football">Football Field</option>
+                <option value="basketball">Basketball Court</option>
+                <option value="chalk">Chalkboard</option>
+                <option value="soccer">Soccer Pitch</option>
+                <option value="ice">Ice Rink</option>
+                <option value="infinite-sigma">Infinite Sigma</option>
+              </select>
+            </div>
+            <div class="settings-item">
+              <label for="arrowSpeed">Live Speed</label>
+              <input type="range" id="arrowSpeed" min="1" max="10" value="5" aria-label="Arrow movement speed" />
             </div>
             <div class="settings-item">
               <label>
@@ -1939,6 +1954,7 @@ body[data-theme="grifballhub"]::after{
       let dragStartPosition = null;
       let drawStartState = null;
       let arrowDraft = null;
+      let rotationDraft = null;
       let isRunningPlayArrows = false;
       let isVerticalCourt = false;
       let useArrowPieceShape = false;
@@ -2035,6 +2051,62 @@ body[data-theme="grifballhub"]::after{
         if (!line) return;
         line.remove();
         markerConnections.delete(marker);
+      }
+
+      function toggleMarkerConnector(marker) {
+        const shouldHighlight = !marker.classList.contains("highlight");
+        marker.classList.toggle("highlight", shouldHighlight);
+        syncMarkerVisual(marker);
+        if (shouldHighlight) createConnector(marker);
+        else removeConnector(marker);
+        updateConnector(marker);
+      }
+
+      function normalizeRotation(value) {
+        return (value % 360 + 360) % 360;
+      }
+
+      function setMarkerRotation(marker, rotation) {
+        const next = normalizeRotation(rotation);
+        marker.dataset.rotation = String(next);
+        marker.style.setProperty("--rotation", `${next}deg`);
+      }
+
+      function rotateMarker(marker, step = 90) {
+        const current = parseFloat(marker.dataset.rotation || "0");
+        setMarkerRotation(marker, current + step);
+      }
+
+      function markerCenterFromEventSpace(marker) {
+        const rect = field.getBoundingClientRect();
+        return {
+          x: rect.left + (parseFloat(marker.dataset.x) / 100) * rect.width,
+          y: rect.top + (parseFloat(marker.dataset.y) / 100) * rect.height,
+        };
+      }
+
+      function rotationFromPointer(marker, event) {
+        const center = markerCenterFromEventSpace(marker);
+        const radians = Math.atan2(event.clientY - center.y, event.clientX - center.x);
+        return normalizeRotation((radians * 180) / Math.PI + 90);
+      }
+
+      function angleDistanceFromMarkerCenter(marker, event) {
+        const center = markerCenterFromEventSpace(marker);
+        return Math.hypot(event.clientX - center.x, event.clientY - center.y);
+      }
+
+      function shortestAngleDelta(fromAngle, toAngle) {
+        let delta = normalizeRotation(toAngle) - normalizeRotation(fromAngle);
+        if (delta > 180) delta -= 360;
+        if (delta < -180) delta += 360;
+        return delta;
+      }
+
+      function rotationFromPointerDelta(marker, startRotation, startPointerAngle, event) {
+        const currentPointerAngle = rotationFromPointer(marker, event);
+        const delta = shortestAngleDelta(startPointerAngle, currentPointerAngle);
+        return startRotation + delta;
       }
 
       function updateConnector(marker) {
@@ -2294,6 +2366,7 @@ body[data-theme="grifballhub"]::after{
         return {
           x: parseFloat(marker.dataset.x),
           y: parseFloat(marker.dataset.y),
+          rotation: parseFloat(marker.dataset.rotation || "0"),
           hidden: marker.classList.contains("is-hidden"),
           label: marker.dataset.label || "",
           color: marker.dataset.color || "",
@@ -2327,6 +2400,7 @@ body[data-theme="grifballhub"]::after{
       function applyMarkerState(marker, state) {
         if (!state) return;
         positionMarker(marker, state.x, state.y);
+        setMarkerRotation(marker, Number(state.rotation || 0));
        
         marker.classList.toggle("highlight", Boolean(state.highlight));
         if (state.color) {
@@ -2702,26 +2776,29 @@ body[data-theme="grifballhub"]::after{
       }
 
       function onMarkerPointerDown(event) {
-        // Right click toggles connector
         if (event.button === 2) {
           event.preventDefault();
+          if (isRunningPlayArrows) return;
           const marker = event.currentTarget;
-          const shouldHighlight = !marker.classList.contains("highlight");
-          marker.classList.toggle("highlight", shouldHighlight);
-          syncMarkerVisual(marker);
-          if (shouldHighlight) createConnector(marker);
-          else removeConnector(marker);
-          updateConnector(marker);
+          rotationDraft = {
+            marker,
+            pointerId: event.pointerId,
+            startState: getCurrentState(),
+            startRotation: parseFloat(marker.dataset.rotation || "0"),
+            startPointerAngle: rotationFromPointer(marker, event),
+          };
+          
+          marker.setPointerCapture(event.pointerId);
+          return;
+        }
+        if (event.button !== 0) {
           return;
         }
 
         if (mode === "rotate") {
           event.preventDefault();
           const marker = event.currentTarget;
-          const current = parseFloat(marker.dataset.rotation || "0");
-          const next = (current + 90) % 360;
-          marker.dataset.rotation = String(next);
-          marker.style.setProperty("--rotation", `${next}deg`);
+          rotateMarker(marker);
           return;
         }
 
@@ -2784,6 +2861,19 @@ body[data-theme="grifballhub"]::after{
           createOrUpdatePlayArrow(arrowDraft.marker, arrowDraft.points);
           return;
         }
+        if (rotationDraft
+          && event.pointerId === rotationDraft.pointerId
+          && event.currentTarget === rotationDraft.marker) {
+          if (angleDistanceFromMarkerCenter(rotationDraft.marker, event) < 8) return;
+          const nextRotation = rotationFromPointerDelta(
+            rotationDraft.marker,
+            rotationDraft.startRotation,
+            rotationDraft.startPointerAngle,
+            event,
+          );
+          setMarkerRotation(rotationDraft.marker, nextRotation);
+          return;
+        }
         if (!activeMarker || event.pointerId !== activePointerId) return;
 
         const rect = field.getBoundingClientRect();
@@ -2811,6 +2901,17 @@ body[data-theme="grifballhub"]::after{
             }
           }
           arrowDraft = null;
+          return;
+        }
+        if (rotationDraft
+          && event.pointerId === rotationDraft.pointerId
+          && event.currentTarget === rotationDraft.marker) {
+          event.currentTarget.releasePointerCapture(event.pointerId);
+          const currentRotation = parseFloat(rotationDraft.marker.dataset.rotation || "0");
+          if (normalizeRotation(currentRotation) !== normalizeRotation(rotationDraft.startRotation)) {
+            pushHistory(rotationDraft.startState);
+          }
+          rotationDraft = null;
           return;
         }
         if (event.pointerId !== activePointerId) return;
@@ -2921,9 +3022,11 @@ body[data-theme="grifballhub"]::after{
       function syncMarkerVisual(marker) {
         const color = marker.dataset.color || getDefaultMarkerColor(marker);
         if (useArrowPieceShape) {
-          const outline = marker.classList.contains("highlight") ? "#facc15" : color;
+          const accent = marker.classList.contains("highlight") ? "#facc15" : color;
+          const outline = marker.classList.contains("highlight") ? "#facc15" : adjustColor(color, 10);
           marker.style.setProperty("--piece-outline", adjustColor(outline, 8));
           marker.style.setProperty("--piece-glow", adjustColor(outline, 48));
+          marker.style.setProperty("--piece-accent-soft", adjustColor(accent, 20));
           marker.style.color = marker.classList.contains("highlight") ? "#fff7d6" : "#e2e8f0";
           marker.style.removeProperty("background");
           return;
@@ -2931,6 +3034,7 @@ body[data-theme="grifballhub"]::after{
 
         marker.style.removeProperty("--piece-outline");
         marker.style.removeProperty("--piece-glow");
+        marker.style.removeProperty("--piece-accent-soft");
         if (marker.classList.contains("highlight")) {
           marker.style.background = "radial-gradient(circle at 30% 30%, #fef08a, #facc15 70%)";
           marker.style.color = "#92400e";
@@ -3015,6 +3119,8 @@ body[data-theme="grifballhub"]::after{
               : "Runner";
             pushHistory(snapshot);
           });
+
+          
 
           const actionsRow = document.createElement("div");
           actionsRow.className = "settings-item-actions";
