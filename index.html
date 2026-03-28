@@ -1081,6 +1081,25 @@ body[data-theme="grifballhub"]::after{
         content: attr(data-label);
       }
 
+      .field.arrow-piece-style .marker {
+        width: calc(var(--dot-size) * 1.35);
+        height: calc(var(--dot-size) * 0.84);
+        border-radius: 7px;
+        clip-path: polygon(0 20%, 72% 20%, 72% 0, 100% 50%, 72% 100%, 72% 80%, 0 80%, 10% 50%);
+        background: linear-gradient(150deg, #030712, #0b1220 72%) !important;
+        border: 2px solid var(--piece-outline, #38bdf8);
+        box-shadow:
+          0 0 0 1px color-mix(in srgb, var(--piece-glow, #7dd3fc) 70%, white 30%),
+          0 0 14px color-mix(in srgb, var(--piece-glow, #7dd3fc) 50%, transparent 50%),
+          0 10px 18px rgba(15, 23, 42, 0.4);
+      }
+
+      .field.arrow-piece-style .marker::after {
+        font-size: 0.72rem;
+        letter-spacing: 0.02em;
+        transform: translateX(-5px);
+      }
+
       .field.is-arrow-mode .marker {
         border-radius: 8px;
         clip-path: polygon(0 30%, 72% 30%, 72% 10%, 100% 50%, 72% 90%, 72% 70%, 0 70%);
@@ -1673,10 +1692,9 @@ body[data-theme="grifballhub"]::after{
         
         
 
-        <button type="button" data-mode="move" class="active">Move Pieces</button>
-        <button type="button" data-mode="draw">Draw Routes</button>
-
-        <button type="button" data-mode="arrows">Player Arrows</button>
+        <button type="button" data-mode="move" class="active">Move</button>
+        <button type="button" data-mode="draw">Draw</button>
+        <button type="button" data-mode="arrows">Live Move</button>
         
 
         <label>
@@ -1705,11 +1723,11 @@ body[data-theme="grifballhub"]::after{
         <button type="button" id="downloadPng">Download PNG</button>
         <button type="button" id="clearCanvas">Clear Drawing</button>
         <button type="button" id="runPlayArrows">Send Players</button>
-        <label for="arrowSpeed">Arrow speed</label>
+        <label for="arrowSpeed">Live Speed</label>
         <input type="range" id="arrowSpeed" min="1" max="10" value="5" aria-label="Arrow movement speed" />
         
 
-        <span class="hint">Tip: Right-click a marker to toggle its goal line.</span>
+        <span class="hint">Tip: Middle-click a marker to toggle its goal line.</span>
       </div>
 
       <div class="field-wrapper">
@@ -1732,13 +1750,13 @@ body[data-theme="grifballhub"]::after{
                 </button>
               </div>
             <div class="settings-item">
-              <label for="dotSize">Dot size</label>
+              <label for="dotSize">Player Size</label>
               <input type="range" id="dotSize" min="28" max="90" value="52" />
             </div>
             <div class="settings-item">
               <label>
                 <input type="checkbox" id="spawnToggle" />
-                Show spawn points
+                Spawn Points
               </label>
             </div>
             
@@ -1762,6 +1780,7 @@ body[data-theme="grifballhub"]::after{
             <button type="button" id="undoAction">Undo Last Action</button>
             <button type="button" id="resetDots">Reset Dots</button>
             <button type="button" id="toggleCourtOrientation">Vertical Court</button>
+            <button type="button" id="togglePieceShape">Arrows</button>
             
           </aside>
           <section class="field moving" id="field" aria-label="Interactive field">
@@ -1888,6 +1907,7 @@ body[data-theme="grifballhub"]::after{
       const undoActionButton = document.getElementById("undoAction");
       const resetDotsButton = document.getElementById("resetDots");
       const toggleCourtOrientationButton = document.getElementById("toggleCourtOrientation");
+      const togglePieceShapeButton = document.getElementById("togglePieceShape");
       const ctx = canvas.getContext("2d");
 
       const goalTargets = {
@@ -1915,6 +1935,7 @@ body[data-theme="grifballhub"]::after{
       let arrowDraft = null;
       let isRunningPlayArrows = false;
       let isVerticalCourt = false;
+      let useArrowPieceShape = false;
       const initialMarkerPositions = markers.map((marker) => ({
         x: parseFloat(marker.dataset.x),
         y: parseFloat(marker.dataset.y),
@@ -2291,6 +2312,7 @@ body[data-theme="grifballhub"]::after{
             y: parseFloat(pointElement.dataset.y),
           })),
           isVerticalCourt,
+          useArrowPieceShape,
           drawing: getCanvasSnapshot(),
           
         };
@@ -2346,6 +2368,12 @@ body[data-theme="grifballhub"]::after{
         if (toggleCourtOrientationButton) {
           toggleCourtOrientationButton.textContent = isVerticalCourt ? "Horizontal Court" : "Vertical Court";
         }
+        useArrowPieceShape = Boolean(state.useArrowPieceShape);
+        field.classList.toggle("arrow-piece-style", useArrowPieceShape);
+        if (togglePieceShapeButton) {
+          togglePieceShapeButton.textContent = useArrowPieceShape ? "Circle Pieces" : "Arrow Pieces";
+        }
+        markers.forEach((marker) => syncMarkerVisual(marker));
         
         buildMarkerSettings();
         refreshConnectorPositions();
@@ -2878,13 +2906,25 @@ body[data-theme="grifballhub"]::after{
       }
 
       function syncMarkerVisual(marker) {
+        const color = marker.dataset.color || getDefaultMarkerColor(marker);
+        if (useArrowPieceShape) {
+          const outline = marker.classList.contains("highlight") ? "#facc15" : color;
+          marker.style.setProperty("--piece-outline", adjustColor(outline, 8));
+          marker.style.setProperty("--piece-glow", adjustColor(outline, 48));
+          marker.style.color = marker.classList.contains("highlight") ? "#fff7d6" : "#e2e8f0";
+          marker.style.removeProperty("background");
+          return;
+        }
+
+        marker.style.removeProperty("--piece-outline");
+        marker.style.removeProperty("--piece-glow");
         if (marker.classList.contains("highlight")) {
           marker.style.background = "radial-gradient(circle at 30% 30%, #fef08a, #facc15 70%)";
           marker.style.color = "#92400e";
           return;
         }
 
-        const color = marker.dataset.color || getDefaultMarkerColor(marker);
+        
         const highlight = adjustColor(color, 50);
         const shade = adjustColor(color, -40);
         marker.style.background = `radial-gradient(circle at 30% 30%, ${highlight}, ${shade} 65%)`;
@@ -3327,6 +3367,17 @@ body[data-theme="grifballhub"]::after{
       if (toggleCourtOrientationButton) {
         toggleCourtOrientationButton.addEventListener("click", () => {
           applyCourtOrientation(!isVerticalCourt);
+        });
+      }
+
+      if (togglePieceShapeButton) {
+        togglePieceShapeButton.addEventListener("click", () => {
+          const snapshot = getCurrentState();
+          useArrowPieceShape = !useArrowPieceShape;
+          field.classList.toggle("arrow-piece-style", useArrowPieceShape);
+          togglePieceShapeButton.textContent = useArrowPieceShape ? "Circle Pieces" : "Arrow Pieces";
+          markers.forEach((marker) => syncMarkerVisual(marker));
+          pushHistory(snapshot);
         });
       }
 
