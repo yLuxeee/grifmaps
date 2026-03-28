@@ -1377,6 +1377,12 @@ body[data-theme="grifballhub"]::after{
         justify-self: start;
       }
 
+      .settings-item-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
       .settings-panel::-webkit-scrollbar,
       .settings-drawer::-webkit-scrollbar,
       .settings-list::-webkit-scrollbar {
@@ -1727,7 +1733,7 @@ body[data-theme="grifballhub"]::after{
         <input type="range" id="arrowSpeed" min="1" max="10" value="5" aria-label="Arrow movement speed" />
         
 
-        <span class="hint">Tip: Middle-click a marker to toggle its goal line.</span>
+        <span class="hint">Right click a player to rotate.</span>
       </div>
 
       <div class="field-wrapper">
@@ -2758,6 +2764,13 @@ body[data-theme="grifballhub"]::after{
         activeMarker.setPointerCapture(activePointerId);
       }
 
+      function onMarkerContextMenu(event) {
+        event.preventDefault();
+        if (mode !== "arrows") return;
+        const marker = event.currentTarget;
+        rotateMarkerDirection(marker);
+      }
+
       function onMarkerPointerMove(event) {
         if (arrowDraft && event.pointerId === arrowDraft.pointerId && event.currentTarget === arrowDraft.marker) {
           const rect = field.getBoundingClientRect();
@@ -2991,9 +3004,25 @@ body[data-theme="grifballhub"]::after{
             pushHistory(snapshot);
           });
 
+          const goalLineButton = document.createElement("button");
+          goalLineButton.type = "button";
+          goalLineButton.textContent = marker.classList.contains("highlight") ? "Tank" : "Runner";
+          goalLineButton.addEventListener("click", () => {
+            const snapshot = getCurrentState();
+            toggleMarkerConnector(marker);
+            goalLineButton.textContent = marker.classList.contains("highlight")
+              ? "Tank"
+              : "Runner";
+            pushHistory(snapshot);
+          });
+
+          const actionsRow = document.createElement("div");
+          actionsRow.className = "settings-item-actions";
+          actionsRow.append(toggleButton, goalLineButton);
+
           wrapper.appendChild(nameLabel);
           wrapper.appendChild(colorLabel);
-          wrapper.appendChild(toggleButton);
+          wrapper.appendChild(actionsRow);
           settingsList.appendChild(wrapper);
         });
       }
