@@ -1,5 +1,0 @@
-<!doctype html><html><head><meta charset='UTF-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>Players</title><link rel='stylesheet' href='styles.css'></head><body>
-<nav class='navbar'><div class='container nav-inner'><a class='brand' href='index.html'>Grifmaps League</a><div class='links'><a data-page='league' href='index.html'>League</a><a data-page='players' href='players.html'>Players</a><a data-page='teams' href='teams.html'>Teams</a><a data-page='standings' href='standings.html'>Standings</a><a data-page='rules' href='rules.html'>Rules</a><a data-page='account' href='account.html'>Account</a></div></div></nav>
-<main class='container'><section class='card'><h1>All Signups</h1><table class='table'><thead><tr><th>Player</th><th>Role</th><th>Team</th></tr></thead><tbody id='rows'></tbody></table></section></main>
-<script type='module'>import { loadLeague, setActiveNav } from './app.js'; setActiveNav('players'); const d=loadLeague(); document.getElementById('rows').innerHTML=d.signups.map(s=>`<tr><td>${s.player}</td><td>${s.wantsCaptain?'Captain':'Player'}</td><td>${s.teamName||'-'}</td></tr>`).join('');</script>
-</body></html>
