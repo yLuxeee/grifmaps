@@ -1,0 +1,1011 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Grifmaps Topdown Arena Prototype</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: radial-gradient(circle at top, #1e293b 0%, #0f172a 60%, #020617 100%);
+        --panel: rgba(15, 23, 42, 0.92);
+        --panel-border: rgba(148, 163, 184, 0.28);
+        --text: #e2e8f0;
+        --muted: #94a3b8;
+        --blue: #38bdf8;
+        --red: #f87171;
+        --arena: #0b1220;
+        --arena-line: rgba(148, 163, 184, 0.24);
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: Inter, system-ui, -apple-system, Segoe UI, sans-serif;
+        color: var(--text);
+        background: var(--bg);
+        display: grid;
+        place-items: center;
+        padding: 18px;
+      }
+
+      .shell {
+        width: min(1120px, 100%);
+        background: var(--panel);
+        border: 1px solid var(--panel-border);
+        border-radius: 20px;
+        padding: 18px;
+        display: grid;
+        gap: 14px;
+      }
+
+      .top {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
+      .card {
+        border: 1px solid var(--panel-border);
+        border-radius: 14px;
+        padding: 10px 12px;
+        background: rgba(15, 23, 42, 0.65);
+      }
+
+      .tiny { color: var(--muted); font-size: 0.9rem; }
+      .me { font-weight: 800; }
+      .match-timer {
+        font-weight: 900;
+        font-size: clamp(1.8rem, 3.6vw, 3rem);
+        line-height: 1;
+        letter-spacing: 0.04em;
+        color: #f8fafc;
+      }
+      .lobby-controls {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      #startMatchBtn {
+        border: 1px solid rgba(148, 163, 184, 0.4);
+        background: #1d4ed8;
+        color: #eff6ff;
+        padding: 8px 12px;
+        border-radius: 10px;
+        font-weight: 700;
+        cursor: pointer;
+      }
+      #startMatchBtn:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+
+      #arena {
+        width: 100%;
+        aspect-ratio: 16 / 9;
+        border-radius: 14px;
+        border: 1px solid var(--arena-line);
+        background: var(--arena);
+        display: block;
+      }
+
+      .hud {
+        display: grid;
+        gap: 10px;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      }
+      
+      .prelobby {
+        position: fixed;
+        inset: 0;
+        background: rgba(2, 6, 23, 0.9);
+        display: grid;
+        place-items: center;
+        z-index: 20;
+      }
+      .prelobby-card {
+        width: min(560px, calc(100vw - 24px));
+        background: rgba(15, 23, 42, 0.95);
+        border: 1px solid var(--panel-border);
+        border-radius: 16px;
+        padding: 18px;
+        display: grid;
+        gap: 12px;
+      }
+      .prelobby-actions {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      #connectBtn {
+        border: 1px solid rgba(148, 163, 184, 0.4);
+        background: #059669;
+        color: #ecfeff;
+        padding: 10px 14px;
+        border-radius: 10px;
+        font-weight: 800;
+        cursor: pointer;
+      }
+      
+      ul { margin: 0; padding-left: 18px; }
+      a { color: var(--blue); }
+    </style>
+  </head>
+  <body>
+    <div id="preLobby" class="prelobby">
+      <div class="prelobby-card">
+        <div class="tiny">Pre-game lobby</div>
+        <h2 style="margin:0;">Connect</h2>
+        <div class="prelobby-actions">
+          
+          <button id="connectBtn" type="button">Connect to lobby</button>
+        </div>
+        <div class="tiny">Pick a map/background, then connect. After connecting, start the match from the lobby panel.</div>
+      </div>
+    </div>
+    <main class="shell">
+      <div class="top">
+        <div class="card">
+          <div class="tiny">Connected as</div>
+          <div class="me" id="meLabel">Joining…</div>
+        </div>
+        <div class="card">
+          <div class="tiny">How to play</div>
+          <div><strong>WASD</strong> move · <strong>Left click</strong> attack</div>
+        </div>
+        <div class="card">
+          <div class="tiny">Prototype multiplayer</div>
+          <div>Open this page in multiple tabs to fill players 1–6.</div>
+        </div>
+        <div class="card">
+          <div class="tiny">Match timer</div>
+          <div id="matchTimer" class="match-timer">10:00</div>
+        </div>
+        <div class="card">
+          <div class="tiny">Lobby</div>
+          <div class="lobby-controls">
+            <button id="startMatchBtn" type="button">Start game</button>
+            <span id="lobbyStatus" class="tiny">Waiting for players…</span>
+          </div>
+          
+
+        </div>
+      </div>
+
+      <canvas id="arena" width="1280" height="720" aria-label="Topdown arena"></canvas>
+
+      <div class="hud">
+        <div class="card">
+          <div class="tiny">Rules from your prompt</div>
+          <ul>
+            <li>6 players total, split into <strong>3v3</strong>.</li>
+            <li>Each connection gets one slot: <strong>Player 1-6</strong>.</li>
+            <li>Melee attack reaches a short distance in front.</li>
+            <li>Hit enemy dies and respawns after <strong>4 seconds</strong>.</li>
+          </ul>
+        </div>
+        <div class="card" id="scoreboard"></div>
+        <div class="card" id="dashPanel"></div>
+      </div>
+    </main>
+
+    <script>
+      (() => {
+        const canvas = document.getElementById("arena");
+        const ctx = canvas.getContext("2d");
+        const meLabel = document.getElementById("meLabel");
+        const scoreboard = document.getElementById("scoreboard");
+        const dashPanel = document.getElementById("dashPanel");
+        const matchTimer = document.getElementById("matchTimer");
+        const startMatchBtn = document.getElementById("startMatchBtn");
+        const lobbyStatus = document.getElementById("lobbyStatus");
+        const preLobby = document.getElementById("preLobby");
+        const connectBtn = document.getElementById("connectBtn");
+        
+
+        const WORLD_KEY = "grifmaps_topdown_world_v1";
+        const REGISTRY_KEY = "grifmaps_topdown_registry_v1";
+        const clientId = (crypto.randomUUID?.() || `c-${Date.now()}-${Math.random().toString(16).slice(2)}`);
+        const channel = "BroadcastChannel" in window ? new BroadcastChannel("grifmaps_topdown_sync") : null;
+
+        const maxPlayers = 6;
+        const teamSize = 3;
+        const moveSpeed = 120;
+        const radius = 18;
+        const ballRadius = 12;
+        const attackRange = 62;
+        const attackConeAngle = Math.PI / 3;
+        const attackLifeMs = 130;
+        const attackCooldownMs = 1000;
+        const dashDistance = 110;
+        const dashCooldownMs = 5000;
+        const dashDurationMs = 180;
+        const slotStaleMs = 10000;
+        const goalRadius = 12;
+        const goalInset = 10;
+        const matchDurationMs = 10 * 60 * 1000; // 10 minutes
+        const redSpawnPoints = [
+          { x: 56, y: 165 },
+          { x: 50, y: 360 },
+          { x: 54, y: 560 },
+        ];
+        const mapThemes = {
+          classic: { name: "Classic Night", redTint: "rgba(248,113,113,0.1)", blueTint: "rgba(56,189,248,0.1)", field: "#0b1220" },
+          ember: { name: "Ember Dusk", redTint: "rgba(251, 146, 60, 0.16)", blueTint: "rgba(244, 114, 182, 0.1)", field: "#1f1024" },
+          forest: { name: "Forest Rift", redTint: "rgba(34, 197, 94, 0.11)", blueTint: "rgba(16, 185, 129, 0.11)", field: "#081c15" },
+          neon: { name: "Neon Grid", redTint: "rgba(99, 102, 241, 0.15)", blueTint: "rgba(6, 182, 212, 0.15)", field: "#111827" },
+        };
+
+        const keyState = { w: false, a: false, s: false, d: false, e: false };
+        let mySlot = null;
+        let myLastAttackAt = 0;
+        let world = null;
+        let lastFrame = performance.now();
+        
+        let wantsConnection = false;
+
+        function mapThemeForId(mapId) {
+          return mapThemes[mapId] || mapThemes.classic;
+        }
+
+        function randomMapId() {
+          const ids = Object.keys(mapThemes);
+          return ids[Math.floor(Math.random() * ids.length)] || "classic";
+        }
+
+        function clamp(value, min, max) {
+          return Math.max(min, Math.min(max, value));
+        }
+
+        function attackRangeForPlayer(player) {
+          return world.ball.carrierSlot === player.slot ? attackRange * 0.2 : attackRange;
+        }
+
+        function facingVectorForPlayer(player) {
+          const fx = Number.isFinite(player.facingX) ? player.facingX : 0;
+          const fy = Number.isFinite(player.facingY) ? player.facingY : 0;
+          const mag = Math.hypot(fx, fy);
+          if (mag < 0.0001) return { x: 1, y: 0 };
+          return { x: fx / mag, y: fy / mag };
+        }
+
+        function teamForSlot(slot) {
+          return slot <= teamSize ? "red" : "blue";
+        }
+
+        function goalForTeam(team) {
+          const x = team === "red" ? goalInset + goalRadius : canvas.width - goalInset - goalRadius;
+          return { x, y: canvas.height / 2 };
+        }
+
+        function spawnForSlot(slot) {
+          const team = teamForSlot(slot);
+          const idx = (slot - 1) % teamSize;
+          const redSpawn = redSpawnPoints[idx] || redSpawnPoints[0];
+          if (team === "red") return { x: redSpawn.x, y: redSpawn.y };
+          return { x: canvas.width - redSpawn.x, y: redSpawn.y };
+        }
+
+        function newWorld() {
+          const players = {};
+          for (let slot = 1; slot <= maxPlayers; slot += 1) {
+            const spawn = spawnForSlot(slot);
+            players[slot] = {
+              slot,
+              team: teamForSlot(slot),
+              x: spawn.x,
+              y: spawn.y,
+              facingX: teamForSlot(slot) === "red" ? 1 : -1,
+              facingY: 0,
+              alive: true,
+              respawnAt: 0,
+              attackUntil: 0,
+              kills: 0,
+              deaths: 0,
+              dashReadyAt: 0,
+              dashVx: 0,
+              dashVy: 0,
+              dashUntil: 0,
+            };
+          }
+          return {
+            players,
+            ball: {
+              x: canvas.width / 2,
+              y: canvas.height / 2,
+              carrierSlot: null,
+              vx: 0,
+              vy: 0,
+              movingUntil: 0,
+              pickupLockedUntil: 0,
+              lastThrownBy: null,
+            },
+            match: {
+              redScore: 0,
+              blueScore: 0,
+              roundResetAt: 0,
+              lastScoredTeam: null,
+              gameEndsAt: Date.now() + matchDurationMs,
+              gameOverText: "",
+              gameOverTextUntil: 0,
+              phase: "lobby",
+              isOvertime: false,
+              mapId: "classic",
+            },
+            updatedAt: Date.now()
+          };
+        }
+
+        function ensureWorldShape(state) {
+          if (!state.ball) {
+            state.ball = {
+              x: canvas.width / 2,
+              y: canvas.height / 2,
+              carrierSlot: null,
+              vx: 0,
+              vy: 0,
+              movingUntil: 0,
+              pickupLockedUntil: 0,
+              lastThrownBy: null,
+            };
+          }
+          if (typeof state.ball.vx !== "number") state.ball.vx = 0;
+          if (typeof state.ball.vy !== "number") state.ball.vy = 0;
+          if (typeof state.ball.movingUntil !== "number") state.ball.movingUntil = 0;
+          if (typeof state.ball.pickupLockedUntil !== "number") state.ball.pickupLockedUntil = 0;
+          if (typeof state.ball.lastThrownBy !== "number" && state.ball.lastThrownBy !== null) state.ball.lastThrownBy = null;
+          if (!state.match) {
+            state.match = {
+              redScore: 0,
+              blueScore: 0,
+              roundResetAt: 0,
+              lastScoredTeam: null,
+              gameEndsAt: Date.now() + matchDurationMs,
+              gameOverText: "",
+              gameOverTextUntil: 0,
+              phase: "lobby",
+              isOvertime: false,
+              mapId: "classic",
+            };
+          }
+          if (typeof state.match.redScore !== "number") state.match.redScore = 0;
+          if (typeof state.match.blueScore !== "number") state.match.blueScore = 0;
+          if (typeof state.match.roundResetAt !== "number") state.match.roundResetAt = 0;
+          if (typeof state.match.gameEndsAt !== "number") state.match.gameEndsAt = Date.now() + matchDurationMs;
+          if (typeof state.match.gameOverText !== "string") state.match.gameOverText = "";
+          if (typeof state.match.gameOverTextUntil !== "number") state.match.gameOverTextUntil = 0;
+          if (typeof state.match.isOvertime !== "boolean") state.match.isOvertime = false;
+          if (typeof state.match.mapId !== "string" || !mapThemes[state.match.mapId]) state.match.mapId = "classic";
+          if (!["live", "lobby", "overtime"].includes(state.match.phase)) state.match.phase = "lobby";
+          Object.values(state.players).forEach((player) => {
+            if (typeof player.dashReadyAt !== "number") player.dashReadyAt = 0;
+            if (typeof player.dashVx !== "number") player.dashVx = 0;
+            if (typeof player.dashVy !== "number") player.dashVy = 0;
+            if (typeof player.dashUntil !== "number") player.dashUntil = 0;
+          });
+          return state;
+        }
+
+        function resetPlayerStats(state) {
+          Object.values(state.players).forEach((player) => {
+            player.kills = 0;
+            player.deaths = 0;
+          });
+        }
+
+        function endGameToLobby(now, winnerText) {
+          resetRoundPositions(world);
+          resetPlayerStats(world);
+          world.match.redScore = 0;
+          world.match.blueScore = 0;
+          world.match.roundResetAt = 0;
+          world.match.lastScoredTeam = null;
+          world.match.gameEndsAt = 0;
+          world.match.phase = "lobby";
+          world.match.isOvertime = false;
+          world.match.gameOverText = winnerText;
+          world.match.gameOverTextUntil = now + 4000;
+        }
+
+        function resetRoundPositions(state) {
+          Object.values(state.players).forEach((player) => {
+            const spawn = spawnForSlot(player.slot);
+            player.x = spawn.x;
+            player.y = spawn.y;
+            player.alive = true;
+            player.respawnAt = 0;
+            player.attackUntil = 0;
+            player.dashReadyAt = 0;
+            player.dashVx = 0;
+            player.dashVy = 0;
+            player.dashUntil = 0;
+            player.facingX = player.team === "red" ? 1 : -1;
+            player.facingY = 0;
+          });
+          state.ball.carrierSlot = null;
+          state.ball.x = canvas.width / 2;
+          state.ball.y = canvas.height / 2;
+          state.ball.vx = 0;
+          state.ball.vy = 0;
+          state.ball.movingUntil = 0;
+          state.ball.pickupLockedUntil = 0;
+          state.ball.lastThrownBy = null;
+        }
+
+        function tryThrowBall(now) {
+          if (!mySlot) return;
+          if (world.match.phase !== "live" && world.match.phase !== "overtime") return;
+          if (world.ball.carrierSlot !== mySlot) return;
+          const me = world.players[mySlot];
+          if (!me || !me.alive) return;
+
+          const facing = facingVectorForPlayer(me);
+          const throwSpeed = 600;
+          world.ball.carrierSlot = null;
+          world.ball.x = me.x + facing.x * (radius + ballRadius + 3);
+          world.ball.y = me.y + facing.y * (radius + ballRadius + 3);
+          world.ball.vx = facing.x * throwSpeed;
+          world.ball.vy = facing.y * throwSpeed;
+          world.ball.movingUntil = now + 1250;
+          world.ball.pickupLockedUntil = now + 300;
+          world.ball.lastThrownBy = mySlot;
+          writeWorld(world);
+        }
+
+        function tryDash(now) {
+          if (!mySlot) return;
+          if (world.match.phase !== "live" && world.match.phase !== "overtime") return;
+          if (world.match.roundResetAt > now) return;
+          const me = world.players[mySlot];
+          if (!me || !me.alive) return;
+          if ((me.dashReadyAt || 0) > now) return;
+
+          const facing = facingVectorForPlayer(me);
+          const dashSpeed = dashDistance / (dashDurationMs / 1000);
+          me.dashVx = facing.x * dashSpeed;
+          me.dashVy = facing.y * dashSpeed;
+          me.dashUntil = now + dashDurationMs;
+          me.dashReadyAt = now + dashCooldownMs;
+          writeWorld(world);
+        }
+
+        function startMatch(now) {
+          world = readWorld();
+          const connectedCount = activeSlots().size;
+          if (connectedCount < 1) return;
+
+          resetRoundPositions(world);
+          world.match.redScore = 0;
+          world.match.blueScore = 0;
+          world.match.roundResetAt = 0;
+          world.match.lastScoredTeam = null;
+          world.match.gameOverText = "";
+          world.match.gameOverTextUntil = 0;
+          world.match.gameEndsAt = now + matchDurationMs;
+          world.match.phase = "live";
+          world.match.isOvertime = false;
+          world.match.mapId = randomMapId();
+          resetPlayerStats(world);
+          writeWorld(world);
+        }
+
+        function readWorld() {
+          try {
+            const raw = localStorage.getItem(WORLD_KEY);
+            if (!raw) return newWorld();
+            const parsed = JSON.parse(raw);
+            if (!parsed?.players) return newWorld();
+            return ensureWorldShape(parsed);
+          } catch {
+            return newWorld();
+          }
+        }
+
+        function writeWorld(next) {
+          next.updatedAt = Date.now();
+          world = next;
+          localStorage.setItem(WORLD_KEY, JSON.stringify(next));
+          channel?.postMessage({ type: "world" });
+        }
+
+        function readRegistry() {
+          try {
+            return JSON.parse(localStorage.getItem(REGISTRY_KEY) || "[]");
+          } catch {
+            return [];
+          }
+        }
+
+        function writeRegistry(reg) {
+          localStorage.setItem(REGISTRY_KEY, JSON.stringify(reg));
+          channel?.postMessage({ type: "registry" });
+        }
+
+        
+
+        function claimSlot() {
+          const now = Date.now();
+          const reg = readRegistry().filter((entry) => now - entry.lastSeen < slotStaleMs || entry.clientId === clientId);
+          let mine = reg.find((entry) => entry.clientId === clientId);
+
+          if (!mine) {
+            for (let slot = 1; slot <= maxPlayers; slot += 1) {
+              if (!reg.some((entry) => entry.slot === slot)) {
+                mine = { slot, clientId, lastSeen: now };
+                reg.push(mine);
+                break;
+              }
+            }
+          } else {
+            mine.lastSeen = now;
+          }
+
+          writeRegistry(reg);
+          mySlot = mine?.slot || null;
+          return mySlot;
+        }
+
+        function heartbeat() {
+          const now = Date.now();
+          const reg = readRegistry().filter((entry) => now - entry.lastSeen < slotStaleMs);
+          const mine = reg.find((entry) => entry.clientId === clientId);
+          if (mine) {
+            mine.lastSeen = now;
+            writeRegistry(reg);
+          }
+        }
+
+        function releaseSlot() {
+          const reg = readRegistry().filter((entry) => entry.clientId !== clientId);
+          writeRegistry(reg);
+        }
+
+        function activeSlots() {
+          const now = Date.now();
+          return new Set(readRegistry().filter((entry) => now - entry.lastSeen < slotStaleMs).map((entry) => entry.slot));
+        }
+
+        function tryAttack(now) {
+          if (!mySlot) return;
+          if (world.match.phase !== "live" && world.match.phase !== "overtime") return;
+          if (world.match.roundResetAt > now) return;
+          const me = world.players[mySlot];
+          if (!me || !me.alive) return;
+          if (now - myLastAttackAt < attackCooldownMs) return;
+
+          myLastAttackAt = now;
+          me.attackUntil = now + attackLifeMs;
+
+          const dirX = me.facingX ?? 1;
+          const dirY = me.facingY ?? 0;
+          const activeAttackRange = attackRangeForPlayer(me);
+          const facingMag = Math.hypot(dirX, dirY) || 1;
+          const facingX = dirX / facingMag;
+          const facingY = dirY / facingMag;
+          const minDot = Math.cos(attackConeAngle / 2);
+
+          Object.values(world.players).forEach((enemy) => {
+            if (!enemy.alive || enemy.team === me.team) return;
+            const toEnemyX = enemy.x - me.x;
+            const toEnemyY = enemy.y - me.y;
+            const distance = Math.hypot(toEnemyX, toEnemyY);
+            if (distance > activeAttackRange + radius) return;
+
+            const nx = toEnemyX / (distance || 1);
+            const ny = toEnemyY / (distance || 1);
+            const dot = nx * facingX + ny * facingY;
+            if (dot >= minDot) {
+              if (world.ball.carrierSlot === enemy.slot) {
+                world.ball.carrierSlot = null;
+                world.ball.x = enemy.x;
+                world.ball.y = enemy.y;
+              }
+              enemy.alive = false;
+              enemy.respawnAt = now + 4000;
+              enemy.deaths += 1;
+              me.kills += 1;
+            }
+          });
+
+          writeWorld(world);
+        }
+
+        function update(dt, now) {
+          world = readWorld();
+          if (world.match.phase === "live" && world.match.gameEndsAt <= now) {
+            const redScore = world.match.redScore;
+            const blueScore = world.match.blueScore;
+            if (redScore === blueScore) {
+              resetRoundPositions(world);
+              world.match.roundResetAt = 0;
+              world.match.lastScoredTeam = null;
+              world.match.gameEndsAt = 0;
+              world.match.phase = "overtime";
+              world.match.isOvertime = true;
+              world.match.gameOverText = "OVERTIME — NEXT GOAL WINS";
+              world.match.gameOverTextUntil = now + 2800;
+            } else {
+              endGameToLobby(now, `${redScore > blueScore ? "RED" : "BLUE"} TEAM WINS!`);
+            }
+          }
+          if (world.match.roundResetAt && world.match.roundResetAt <= now) {
+            resetRoundPositions(world);
+            world.match.roundResetAt = 0;
+            world.match.lastScoredTeam = null;
+          }
+          const inReset = world.match.roundResetAt > now;
+
+          Object.values(world.players).forEach((player) => {
+            if (!player.alive && player.respawnAt <= now) {
+              const spawn = spawnForSlot(player.slot);
+              player.alive = true;
+              player.x = spawn.x;
+              player.y = spawn.y;
+              player.facingX = player.team === "red" ? 1 : -1;
+              player.facingY = 0;
+            }
+            if (player.alive && (player.dashUntil || 0) > now) {
+              player.x = clamp(player.x + (player.dashVx || 0) * dt, radius, canvas.width - radius);
+              player.y = clamp(player.y + (player.dashVy || 0) * dt, radius, canvas.height - radius);
+            } else {
+              player.dashVx = 0;
+              player.dashVy = 0;
+              player.dashUntil = 0;
+            }
+          });
+
+          if ((world.match.phase === "live" || world.match.phase === "overtime") && !inReset && mySlot && world.players[mySlot]?.alive) {
+            const me = world.players[mySlot];
+            const isDashing = (me.dashUntil || 0) > now;
+            const carryingBall = world.ball.carrierSlot === mySlot;
+            const speedMultiplier = carryingBall ? 1.1 : 1;
+            let vx = 0;
+            let vy = 0;
+            if (keyState.w) vy -= 1;
+            if (keyState.s) vy += 1;
+            if (keyState.a) vx -= 1;
+            if (keyState.d) vx += 1;
+
+            const mag = Math.hypot(vx, vy) || 1;
+            vx /= mag;
+            vy /= mag;
+
+            if (!isDashing) {
+              me.x = clamp(me.x + vx * moveSpeed * speedMultiplier * dt, radius, canvas.width - radius);
+              me.y = clamp(me.y + vy * moveSpeed * speedMultiplier * dt, radius, canvas.height - radius);
+            }
+
+            if (!isDashing && (vx !== 0 || vy !== 0)) {
+              me.facingX = vx;
+              me.facingY = vy;
+            }
+          }
+
+          if ((world.match.phase === "live" || world.match.phase === "overtime") && world.ball.carrierSlot == null && world.ball.movingUntil > now) {
+            world.ball.x = clamp(world.ball.x + world.ball.vx * dt, ballRadius, canvas.width - ballRadius);
+            world.ball.y = clamp(world.ball.y + world.ball.vy * dt, ballRadius, canvas.height - ballRadius);
+          } else if (world.ball.movingUntil <= now) {
+            world.ball.vx = 0;
+            world.ball.vy = 0;
+          }
+
+          if ((world.match.phase === "live" || world.match.phase === "overtime") && !inReset && world.ball.carrierSlot == null && keyState.e && world.ball.movingUntil <= now) {
+            
+            Object.values(world.players).forEach((player) => {
+              if (!player.alive || world.ball.carrierSlot != null) return;
+              if (world.ball.pickupLockedUntil > now && world.ball.lastThrownBy === player.slot) return;
+              const dist = Math.hypot(player.x - world.ball.x, player.y - world.ball.y);
+              if (dist <= radius + ballRadius + 6) {
+                world.ball.carrierSlot = player.slot;
+                world.ball.vx = 0;
+                world.ball.vy = 0;
+                world.ball.movingUntil = 0;
+              }
+            });
+          }
+
+          if (world.ball.carrierSlot != null) {
+            const carrier = world.players[world.ball.carrierSlot];
+            if (!carrier || !carrier.alive) {
+              world.ball.carrierSlot = null;
+            } else {
+              world.ball.x = carrier.x;
+              world.ball.y = carrier.y;
+            }
+          }
+
+          if ((world.match.phase === "live" || world.match.phase === "overtime") && !inReset && world.ball.carrierSlot != null) {
+            const carrier = world.players[world.ball.carrierSlot];
+            const enemyGoal = goalForTeam(carrier.team === "red" ? "blue" : "red");
+            const goalDist = Math.hypot(carrier.x - enemyGoal.x, carrier.y - enemyGoal.y);
+            if (goalDist <= radius + goalRadius) {
+              if (carrier.team === "red") world.match.redScore += 1;
+              if (carrier.team === "blue") world.match.blueScore += 1;
+              world.match.lastScoredTeam = carrier.team;
+              if (world.match.phase === "overtime") {
+                endGameToLobby(now, `${carrier.team.toUpperCase()} TEAM WINS (OT)!`);
+              } else {
+                world.match.roundResetAt = now + 10000;
+                resetRoundPositions(world);
+              }
+            }
+          }
+
+          
+
+          writeWorld(world);
+        }
+
+        function draw(now) {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          const theme = mapThemeForId(world.match.mapId);
+
+          ctx.fillStyle = theme.field;
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+          ctx.strokeStyle = "rgba(148,163,184,0.25)";
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(canvas.width / 2, 0);
+          ctx.lineTo(canvas.width / 2, canvas.height);
+          ctx.stroke();
+
+          ctx.fillStyle = theme.redTint;
+          ctx.fillRect(0, 0, canvas.width / 2, canvas.height);
+          ctx.fillStyle = theme.blueTint;
+          ctx.fillRect(canvas.width / 2, 0, canvas.width / 2, canvas.height);
+          const blueGoal = goalForTeam("blue");
+          const redGoal = goalForTeam("red");
+          ctx.fillStyle = "rgba(56, 189, 248, 0.9)";
+          ctx.beginPath();
+          ctx.arc(blueGoal.x, blueGoal.y, goalRadius, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = "rgba(248, 113, 113, 0.9)";
+          ctx.beginPath();
+          ctx.arc(redGoal.x, redGoal.y, goalRadius, 0, Math.PI * 2);
+          ctx.fill();
+
+          const connected = activeSlots();
+
+          Object.values(world.players).forEach((p) => {
+            const isMine = p.slot === mySlot;
+            const connectedAlpha = connected.has(p.slot) ? 1 : 0.34;
+
+            if (p.alive) {
+              ctx.globalAlpha = connectedAlpha;
+              const carryingBall = world.ball.carrierSlot === p.slot;
+              ctx.fillStyle = carryingBall ? "#fb923c" : (p.team === "red" ? "#ef4444" : "#38bdf8");
+              ctx.beginPath();
+              ctx.arc(p.x, p.y, radius, 0, Math.PI * 2);
+              ctx.fill();
+
+              const tx = p.x + p.facingX * 24;
+              const ty = p.y + p.facingY * 24;
+              ctx.strokeStyle = "rgba(255,255,255,0.75)";
+              ctx.lineWidth = 2;
+              ctx.beginPath();
+              ctx.moveTo(p.x, p.y);
+              ctx.lineTo(tx, ty);
+              ctx.stroke();
+
+              if (p.attackUntil > now) {
+                const activeAttackRange = attackRangeForPlayer(p);
+                ctx.fillStyle = "rgba(250, 204, 21, 0.45)";
+                const facingAngle = Math.atan2(p.facingY ?? 0, p.facingX ?? 1);
+                const halfAngle = attackConeAngle / 2;
+                ctx.beginPath();
+                ctx.moveTo(p.x, p.y);
+                ctx.arc(p.x, p.y, activeAttackRange, facingAngle - halfAngle, facingAngle + halfAngle);
+                ctx.closePath();
+                ctx.fill();
+              }
+            } else {
+              const ms = Math.max(0, p.respawnAt - now);
+              ctx.globalAlpha = 0.7;
+              ctx.fillStyle = "rgba(148, 163, 184, 0.5)";
+              ctx.beginPath();
+              ctx.arc(p.x, p.y, radius, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.fillStyle = "#f8fafc";
+              ctx.font = "bold 14px Inter, sans-serif";
+              ctx.textAlign = "center";
+              ctx.fillText(`${(ms / 1000).toFixed(1)}s`, p.x, p.y + 5);
+            }
+
+            ctx.globalAlpha = 1;
+            ctx.fillStyle = isMine ? "#fde68a" : "#e2e8f0";
+            ctx.font = "600 14px Inter, sans-serif";
+            ctx.textAlign = "center";
+            ctx.fillText(`P${p.slot}`, p.x, p.y - 26);
+          });
+
+          ctx.globalAlpha = 1;
+          ctx.fillStyle = "#f8fafc";
+          ctx.beginPath();
+          ctx.arc(world.ball.x, world.ball.y, ballRadius, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.strokeStyle = "rgba(15, 23, 42, 0.8)";
+          ctx.lineWidth = 2;
+          ctx.stroke();
+
+          if (world.match.roundResetAt > now) {
+            const seconds = Math.ceil((world.match.roundResetAt - now) / 1000);
+            const who = world.match.lastScoredTeam ? `${world.match.lastScoredTeam.toUpperCase()} SCORED!` : "GOAL!";
+            ctx.fillStyle = "rgba(2, 6, 23, 0.72)";
+            ctx.fillRect(canvas.width / 2 - 250, canvas.height / 2 - 54, 500, 108);
+            ctx.fillStyle = "#f8fafc";
+            ctx.textAlign = "center";
+            ctx.font = "700 36px Inter, sans-serif";
+            ctx.fillText(`${who} Reset in ${seconds}s`, canvas.width / 2, canvas.height / 2 + 12);
+          }
+
+          if (world.match.phase === "lobby") {
+            ctx.fillStyle = "rgba(2, 6, 23, 0.72)";
+            ctx.fillRect(canvas.width / 2 - 340, 30, 680, 96);
+            ctx.fillStyle = "#f8fafc";
+            ctx.textAlign = "center";
+            ctx.font = "700 34px Inter, sans-serif";
+            ctx.fillText("LOBBY — Press Start game to begin", canvas.width / 2, 88);
+          }
+
+
+          
+
+          if (world.match.gameOverTextUntil > now && world.match.gameOverText) {
+            ctx.fillStyle = "rgba(2, 6, 23, 0.85)";
+            ctx.fillRect(canvas.width / 2 - 320, canvas.height / 2 - 64, 640, 128);
+            ctx.fillStyle = "#fde68a";
+            ctx.textAlign = "center";
+            ctx.font = "800 44px Inter, sans-serif";
+            ctx.fillText(world.match.gameOverText, canvas.width / 2, canvas.height / 2 + 14);
+          }
+        }
+
+        function updateHud() {
+          if (!mySlot) {
+            meLabel.textContent = wantsConnection
+              ? "Could not join yet (possibly full)."
+              : "Not connected. Use the pre-game lobby.";
+            preLobby.style.display = "";
+            return;
+          }
+          preLobby.style.display = "none";
+
+          const mine = world.players[mySlot];
+          meLabel.textContent = `Player ${mySlot} · ${mine.team.toUpperCase()} team`;
+          
+
+          const red = Object.values(world.players).filter((p) => p.team === "red");
+          const blue = Object.values(world.players).filter((p) => p.team === "blue");
+          const matchMsLeft = world.match.phase === "live" ? Math.max(0, world.match.gameEndsAt - Date.now()) : matchDurationMs;
+          const matchMinutes = Math.floor(matchMsLeft / 60000);
+          const matchSeconds = Math.floor((matchMsLeft % 60000) / 1000);
+          const matchTimeText = world.match.phase === "overtime"
+            ? "OT"
+            : `${String(matchMinutes).padStart(2, "0")}:${String(matchSeconds).padStart(2, "0")}`;
+          matchTimer.textContent = matchTimeText;
+          const connectedCount = activeSlots().size;
+          const canStart = connectedCount >= 1;
+          startMatchBtn.disabled = !canStart || !mySlot;
+          lobbyStatus.textContent = world.match.phase === "live"
+            ? `Live match • ${connectedCount}/6 connected`
+            : world.match.phase === "overtime"
+              ? `Overtime • next goal wins`
+            : `Lobby • ${connectedCount}/6 connected${canStart ? " • ready to start" : " • waiting for player"}`;
+
+          const now = Date.now();
+          const dashText = (p) => {
+            const ms = Math.max(0, (p.dashReadyAt || 0) - now);
+            return ms > 0 ? `${(ms / 1000).toFixed(1)}s` : "Ready";
+          };
+          
+
+          const mk = (list) => list.map((p) => `P${p.slot} ${p.alive ? "🟢" : "⚫"} K:${p.kills} D:${p.deaths}`).join("<br>");
+
+          scoreboard.innerHTML = `
+            <div class="tiny">Scoreboard</div>
+            <div style="margin-top:8px;"><strong>State</strong> ${world.match.phase === "live" ? "LIVE" : (world.match.phase === "overtime" ? "OVERTIME" : "LOBBY")}</div>
+            <div style="margin-top:8px;"><strong>Score</strong> Red ${world.match.redScore} - ${world.match.blueScore} Blue</div>
+            <div style="margin-top:8px;"><strong>Time Left</strong> ${matchTimeText}</div>
+            <div style="margin-top: 8px;"><strong style="color:#f87171;">Red Team</strong><br>${mk(red)}</div>
+            <div style="margin-top: 8px;"><strong style="color:#38bdf8;">Blue Team</strong><br>${mk(blue)}</div>
+          `;
+
+          dashPanel.innerHTML = `
+            <div class="tiny">Dash Cooldowns (right-side HUD)</div>
+            <div style="margin-top:8px;">${Object.values(world.players).map((p) => `P${p.slot}: <strong>${dashText(p)}</strong>`).join("<br>")}</div>
+          `;
+        }
+
+        function frame(now) {
+          const nowMs = Date.now();
+          const dt = Math.min(0.033, (now - lastFrame) / 1000);
+          lastFrame = now;
+
+          update(dt, nowMs);
+          draw(nowMs);
+          updateHud();
+
+          requestAnimationFrame(frame);
+        }
+
+        function onKey(event, down) {
+          if (["KeyW", "KeyA", "KeyS", "KeyD", "KeyE"].includes(event.code)) {
+            event.preventDefault();
+            keyState[event.code.slice(3).toLowerCase()] = down;
+          }
+          if (event.code === "KeyQ" && down && !event.repeat) {
+            event.preventDefault();
+            tryDash(Date.now());
+          }
+        }
+
+        window.addEventListener("keydown", (event) => onKey(event, true));
+        window.addEventListener("keyup", (event) => onKey(event, false));
+        canvas.addEventListener("mousedown", (event) => {
+          if (event.button === 0) {
+            event.preventDefault();
+            tryAttack(Date.now());
+          }
+        });
+
+        startMatchBtn.addEventListener("click", () => {
+          if (!mySlot) return;
+          if (world.match.phase !== "lobby") return;
+            startMatch(Date.now());
+        });
+        
+        connectBtn.addEventListener("click", () => {
+          wantsConnection = true;
+          claimSlot();
+          
+          world = readWorld();
+          if (mySlot) preLobby.style.display = "none";
+        });
+        
+        canvas.addEventListener("contextmenu", (event) => {
+          event.preventDefault();
+        });
+        window.addEventListener("mousedown", (event) => {
+          if (event.button === 2) {
+            event.preventDefault();
+            tryThrowBall(Date.now());
+          }
+        });
+
+        window.addEventListener("storage", (event) => {
+          if (event.key === WORLD_KEY) {
+            world = readWorld();
+          }
+        });
+        channel?.addEventListener("message", () => {
+          world = readWorld();
+        });
+
+        window.addEventListener("beforeunload", releaseSlot);
+
+        world = readWorld();
+        if (!localStorage.getItem(WORLD_KEY)) {
+          writeWorld(world);
+        }
+        
+        preLobby.style.display = "";
+
+        
+        setInterval(() => {
+          if (wantsConnection && mySlot) heartbeat();
+        }, 2000);
+        setInterval(() => {
+          if (wantsConnection && !mySlot) claimSlot();
+        }, 2500);
+
+        requestAnimationFrame(frame);
+      })();
+    </script>
+  </body>
+</html>

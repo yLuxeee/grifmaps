@@ -1,0 +1,32 @@
+<!doctype html><html lang='en'><head><meta charset='UTF-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>League</title><link rel='stylesheet' href='styles.css'></head><body>
+<nav class='navbar'><div class='container nav-inner'><a class='brand' href='index.html'>Grifmaps League</a><div class='links'>
+<a data-page='league' href='index.html'>League</a><a data-page='players' href='players.html'>Players</a><a data-page='teams' href='teams.html'>Teams</a><a data-page='standings' href='standings.html'>Standings</a><a data-page='rules' href='rules.html'>Rules</a><a data-page='account' href='account.html'>Account</a></div></div></nav>
+<main class='container'><section class='card'><h1>Season Signup</h1><p>Register for the season as a player, or volunteer as a captain and create your team name.</p>
+<form id='signupForm' class='grid two'>
+<div><label for='player'>Player name</label><input id='player' required placeholder='Gamertag'></div>
+<div><label for='captain'>Role</label><select id='captain'><option value='no'>Player</option><option value='yes'>Captain</option></select></div>
+<div style='grid-column:1/-1'><label for='teamName'>Team name (captains only)</label><input id='teamName' placeholder='e.g. Ice Falcons'></div>
+<div style='grid-column:1/-1'><button type='submit'>Sign up for season</button></div></form></section></main>
+<script type='module'>
+import { loadLeague, saveLeague, setActiveNav } from './app.js';
+setActiveNav('league');
+const data = loadLeague();
+const form = document.getElementById('signupForm');
+const captain = document.getElementById('captain');
+const teamName = document.getElementById('teamName');
+captain.addEventListener('change', () => { teamName.required = captain.value === 'yes'; });
+form.addEventListener('submit', (e) => {
+ e.preventDefault();
+ const player = document.getElementById('player').value.trim();
+ const wantsCaptain = captain.value === 'yes';
+ const team = teamName.value.trim();
+ if (!player) return;
+ if (wantsCaptain && !team) return alert('Captains need a team name.');
+ data.signups.push({ id: Date.now(), player, wantsCaptain, teamName: team });
+ if (wantsCaptain && !data.stats[team]) data.stats[team] = { lp: 0, wins: 0, losses: 0 };
+ if (wantsCaptain && !data.profiles[team]) data.profiles[team] = { banner:'', colors:'#2f80ed,#56ccf2', comment:'' };
+ saveLeague(data);
+ form.reset();
+ alert('Signup saved.');
+});
+</script></body></html>
