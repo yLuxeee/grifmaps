@@ -1,3 +1,13 @@
 gwl/node_modules
 gwl/.next
 gwl/.env.local
+node_modules/
+.next/
+**/node_modules/
+**/.next/
+node_modules/
+.next/
+**/node_modules/
+**/.next/
+.env.local
+**/.env.local

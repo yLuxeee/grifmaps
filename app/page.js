@@ -188,6 +188,7 @@ export default function HomePage() {
           <nav className="menu">
             <Link href="/" className="active">Standings</Link>
             <Link href="/schedule">Schedule</Link>
+            <Link href="/dynasty">Dynasty</Link>
             <Link href="/teams">Teams</Link>
             <Link href="/login">Login</Link>
             <Link href="/signup">Signup</Link>
