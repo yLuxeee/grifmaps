@@ -354,6 +354,38 @@ const PLAYERS = [
 ["Death", 0.89, "13/6", 10, "WL25", "Ascension", false, false],
 ["Rechargen", 0.86, "13/6", 12, "WL25", "Ascension", false, false],
 
+// SML25 PRO//
+
+["Ace", 1.35, "17/7", 35, "SML25", "Three Days Ace", true, true],
+["BCN", 1.09, "17/7", 10, "SML25", "Three Days Ace", false, true],
+["Scullen", 0.90, "17/7", 23, "SML25", "Three Days Ace", false, true],
+["Hells Angel", 0.82, "17/7", 53, "SML25", "Three Days Ace", false, true],
+
+["Luxe", 1.15, "12/11", 53, "SML25", "Like Clockwork", false, false],
+["Dhmon", 1.22, "12/11", 15, "SML25", "Like Clockwork", false, false],
+["Gingy", 0.90, "12/11", 34, "SML25", "Like Clockwork", false, false],
+["Above Avg", 0.74, "12/11", 5, "SML25", "Like Clockwork", false, false],
+
+["Sab", 1.11, "15/9", 20, "SML25", "Legends Never Die", false, false],
+["Snipez", 0.99, "15/9", 19, "SML25", "Legends Never Die", false, false],
+["mxrvine", 1.08, "15/9", 45, "SML25", "Legends Never Die", false, false],
+["Noplex", 0.67, "15/9", 9, "SML25", "Legends Never Die", false, false],
+
+["Cosmos", 1.24, "4/13", 9, "SML25", "Underrated", false, false],
+["Poptart", 0.97, "4/13", 13, "SML25", "Underrated", false, false],
+["Priest", 0.82, "4/13", 16, "SML25", "Underrated", false, false],
+["KDSkill", 0.84, "4/13", 16, "SML25", "Underrated", false, false],
+
+["Chemical", 1.03, "10/10", 4, "SML25", "Chemical Imbalance", false, false],
+["Novice", 1.02, "10/10", 5, "SML25", "Chemical Imbalance", false, false],
+["Mavbrid", 1.01, "10/10", 19, "SML25", "Chemical Imbalance", false, false],
+["Death", 0.83, "10/10", 41, "SML25", "Chemical Imbalance", false, false],
+
+["Shrek", 1.00, "6/14", 3, "SML25", "The Shrek Republic", false, false],
+["Spank", 0.77, "6/13", 5, "SML25", "The Shrek Republic", false, false],
+["Solace", 1.00, "6/13", 12, "SML25", "The Shrek Republic", false, false],
+["Dhlyn", 0.87, "4/10", 29, "SML25", "The Shrek Republic", false, false],
+
 ].map(
   ([
     gamertag,
