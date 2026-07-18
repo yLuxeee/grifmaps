@@ -386,6 +386,51 @@ const PLAYERS = [
 ["Solace", 1.00, "6/13", 12, "SML25", "The Shrek Republic", false, false],
 ["Dhlyn", 0.87, "4/10", 29, "SML25", "The Shrek Republic", false, false],
 
+// sml25 ammy //
+
+["iReign", 1.37, "6/17", 14, "SML25", "Lite Clockwork", false, false],
+["Epic Beast", 1.23, "6/17", 31, "SML25", "Lite Clockwork", false, false],
+["RiskE", 0.87, "3/13", 2, "SML25", "Lite Clockwork", false, false],
+["Buddha", 0.59, "2/11", 5, "SML25", "Lite Clockwork", false, false],
+["Coded", 0.71, "1/8", 1, "SML25", "Lite Clockwork", false, false],
+
+["Nkot", 1.15, "12/19", 71, "SML25", "Junkyard Dogs", false, false],
+["Rebs", 1.06, "12/19", 19, "SML25", "Junkyard Dogs", false, false],
+["Pete", 0.87, "10/17", 8, "SML25", "Junkyard Dogs", false, false],
+["Scrap", 0.72, "2/17", 3, "SML25", "Junkyard Dogs", false, false],
+["Pacfan", 0.41, "0/2", 0, "SML25", "Junkyard Dogs", false, false],
+
+["Rechargen", 1.16, "24/8", 68, "SML25", "Reverse Sweepers", true, true],
+["Avenger", 1.16, "24/8", 22, "SML25", "Reverse Sweepers", false, true],
+["Big Al", 0.73, "22/6", 44, "SML25", "Reverse Sweepers", false, true],
+["Godly", 0.77, "24/8", 27, "SML25", "Reverse Sweepers", false, true],
+["Vinny", 0.70, "2/2", 1, "SML25", "Reverse Sweepers", false, true],
+
+["Memorized", 1.34, "10/15", 7, "SML25", "Grunting Chicks", false, false],
+["Grunt", 0.88, "10/15", 16, "SML25", "Grunting Chicks", false, false],
+["Define", 0.55, "10/15", 1, "SML25", "Grunting Chicks", false, false],
+["Roswiitha", 1.05, "10/15", 11, "SML25", "Grunting Chicks", false, false],
+
+["Evil", 0.81, "6/17", 9, "SML25", "Grif Prophets", false, false],
+["Spoon", 1.27, "6/17", 23, "SML25", "Grif Prophets", false, false],
+["Doer", 0.71, "6/17", 61, "SML25", "Grif Prophets", false, false],
+["Trespass", 0.81, "6/17", 4, "SML25", "Grif Prophets", false, false],
+
+["Smurf", 0.98, "14/11", 34, "SML25", "Mungo and the Jerries", false, false],
+["Mungo", 0.95, "14/11", 7, "SML25", "Mungo and the Jerries", false, false],
+["Panther", 0.88, "14/11", 14, "SML25", "Mungo and the Jerries", false, false],
+["Buh", 0.93, "14/11", 44, "SML25", "Mungo and the Jerries", false, false],
+
+["Daedric", 0.97, "23/7", 33, "SML25", "Fantastic Fourskins", false, false],
+["Sev", 1.28, "23/7", 64, "SML25", "Fantastic Fourskins", true, false],
+["PsyDucky", 0.98, "23/7", 11, "SML25", "Fantastic Fourskins", false, false],
+["Dveo", 1.33, "23/7", 40, "SML25", "Fantastic Fourskins", false, false],
+
+["Active", 0.76, "14/14", 2, "SML25", "The Black List", false, false],
+["Havoc", 1.18, "14/14", 17, "SML25", "The Black List", false, false],
+["Aware", 0.99, "14/14", 18, "SML25", "The Black List", false, false],
+["Boss", 0.88, "14/14", 18, "SML25", "The Black List", false, false],
+
 ].map(
   ([
     gamertag,
@@ -430,6 +475,7 @@ export default function DynastyPage() {
   const [current, setCurrent] = useState(null);
   const [drafted, setDrafted] = useState([]);
   const [spinning, setSpinning] = useState(false);
+  const [ballKnowledgeMode, setBallKnowledgeMode] = useState(false);
 
   const [powerupsUsed, setPowerupsUsed] = useState({
     player: false,
@@ -695,6 +741,9 @@ function teamSpin() {
 
   const finished = drafted.length === 4;
 
+  const gameStarted =
+  spinning || current !== null || drafted.length > 0;
+
   /*
    * KD remains the most important category.
    *
@@ -703,8 +752,8 @@ function teamSpin() {
    * Historical team win rate is already between 0 and 1.
    */
 
-  const kdScore = Math.min(averageKd / 1.30, 1);
-  const goalScore = Math.min(totalGoals / 140, 1);
+  const kdScore = Math.min(averageKd / 1.35, 1);
+  const goalScore = Math.min(totalGoals / 150, 1);
   const winRateScore = Math.min(averageWinRate, 1);
 
   /*
@@ -885,7 +934,11 @@ const teamSpinAvailable =
   });
 
   return (
-    <div className="page">
+    <div
+  className={`page ${
+    ballKnowledgeMode ? "ballKnowledge" : ""
+  }`}
+>
       <style>{styles}</style>
 
       <header className="topbar">
@@ -919,7 +972,41 @@ const teamSpinAvailable =
             player. Build a championship squad in four
             picks.
           </p>
+          <div className="modeSelector">
+  <div className="modeHeading">
+    <span>SELECT MODE</span>
 
+    {gameStarted && (
+      <small>Mode locked for this draft</small>
+    )}
+  </div>
+
+  <div className="modeOptions">
+    <button
+      type="button"
+      className={`modeButton ${
+        !ballKnowledgeMode ? "selected" : ""
+      }`}
+      disabled={gameStarted}
+      onClick={() => setBallKnowledgeMode(false)}
+    >
+      <strong>STANDARD</strong>
+      <span>Player statistics are visible.</span>
+    </button>
+
+    <button
+      type="button"
+      className={`modeButton ${
+        ballKnowledgeMode ? "selected" : ""
+      }`}
+      disabled={gameStarted}
+      onClick={() => setBallKnowledgeMode(true)}
+    >
+      <strong>🧠 BALL KNOWLEDGE</strong>
+      <span>Draft using names, teams and seasons only.</span>
+    </button>
+  </div>
+</div>
           <div
             className="progress"
             aria-label={`${drafted.length} of 4 players drafted`}
@@ -951,7 +1038,7 @@ const teamSpinAvailable =
         <span>Average KD</span>
         <b>{averageKd.toFixed(3)}</b>
         <small>
-          {averageKd.toFixed(3)} ÷ 1.30 ={" "}
+          {averageKd.toFixed(3)} ÷ 1.35 ={" "}
           {kdScore.toFixed(3)}
         </small>
         <strong>
@@ -976,7 +1063,7 @@ const teamSpinAvailable =
         <span>Total Goals</span>
         <b>{totalGoals}</b>
         <small>
-          {totalGoals} ÷ 140 ={" "}
+          {totalGoals} ÷ 150 ={" "}
           {goalScore.toFixed(3)}
         </small>
         <strong>
@@ -1152,7 +1239,7 @@ const teamSpinAvailable =
     {player.gamertag}
   </div>
 
-  {player.mvp && (
+  {!ballKnowledgeMode && player.mvp && (
     <span
       className="mvpBadge"
       title="MVP: +.5 projected win"
@@ -1179,35 +1266,43 @@ const teamSpinAvailable =
             ↻ SPIN
           </button>
         </div>
+            
+        {!ballKnowledgeMode && (
+  <div className="stats">
+    <span>
+      <b>{player.kd.toFixed(2)}</b>
+      KD
+    </span>
 
-        <div className="stats">
-          <span>
-            <b>{player.kd.toFixed(2)}</b>
-            KD
+    <span>
+      <b className="recordWithTrophy">
+        {player.record}
+
+        {player.trophy && (
+          <span
+            className="trophyIcon"
+            title="Championship: +0.5 projected wins"
+          >
+            🏆
           </span>
+        )}
+      </b>
 
-          <span>
-  <b className="recordWithTrophy">
-    {player.record}
+      W / L
+    </span>
 
-    {player.trophy && (
-      <span
-        className="trophyIcon"
-        title="Championship: +0.5 projected wins"
-      >
-        🏆
-      </span>
-    )}
-  </b>
-
-  W / L
-</span>
-
-          <span>
-            <b>{player.goals}</b>
-            GOALS
-          </span>
-        </div>
+    <span>
+      <b>{player.goals}</b>
+      GOALS
+    </span>
+  </div>
+)}
+{ballKnowledgeMode && (
+  <div className="hiddenStats">
+    <span>STATS HIDDEN</span>
+    <small>Trust your ball knowledge.</small>
+  </div>
+)}
 
         <button
           type="button"
@@ -1414,6 +1509,67 @@ const styles = `
     --lime: #b8ff38;
   }
 
+  .ballKnowledge {
+  --blue: #b3262d;
+  --lime: #ff5b5b;
+  --line: #d9b2b2;
+  --ice: #fff3f3;
+  --ink: #2a0909;
+
+  background:
+    radial-gradient(circle at top left,
+      rgba(179,38,45,.20) 0%,
+      transparent 38%),
+
+    radial-gradient(circle at top right,
+      rgba(255,70,70,.18) 0%,
+      transparent 42%),
+
+    radial-gradient(circle at bottom center,
+      rgba(120,10,20,.12) 0%,
+      transparent 50%),
+
+    linear-gradient(
+      180deg,
+      #fff8f8 0%,
+      #fff2f2 35%,
+      #fdeaea 100%);
+}
+
+  .ballKnowledge::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+
+  background:
+    repeating-linear-gradient(
+      -45deg,
+      rgba(120,0,0,.018) 0px,
+      rgba(120,0,0,.018) 2px,
+      transparent 2px,
+      transparent 10px
+    );
+
+  opacity: .45;
+}
+.ballKnowledge .arena,
+.ballKnowledge aside {
+  background: linear-gradient(
+    180deg,
+    #2a1518 0%,
+    #1d1013 100%
+  );
+}
+
+  .ballKnowledge button {
+  transition: .2s;
+}
+
+.ballKnowledge button:hover {
+  box-shadow:
+    0 0 18px rgba(220,40,40,.45);
+}
   * {
     box-sizing: border-box;
   }
@@ -1547,6 +1703,115 @@ const styles = `
   align-items: center;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+.modeSelector {
+  width: min(720px, 100%);
+  margin: 26px auto 24px;
+}
+
+.modeHeading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.modeHeading > span {
+  color: #31558f;
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+}
+
+.modeHeading small {
+  color: #6d7f98;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.modeOptions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.modeButton {
+  min-height: 78px;
+  border: 1px solid var(--line);
+  background: white;
+  color: var(--ink);
+  padding: 14px 16px;
+  text-align: left;
+  cursor: pointer;
+  transition: 0.16s;
+}
+
+.modeButton:hover:not(:disabled) {
+  border-color: var(--blue);
+  transform: translateY(-2px);
+}
+
+.modeButton.selected {
+  border-color: var(--blue);
+  box-shadow: inset 0 0 0 2px var(--blue);
+}
+
+.modeButton strong {
+  display: block;
+  margin-bottom: 5px;
+  font-family: "Barlow Condensed", sans-serif;
+  font-size: 18px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+}
+
+.modeButton span {
+  color: #65758d;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.modeButton:disabled {
+  cursor: default;
+}
+
+.modeButton:disabled:not(.selected) {
+  opacity: 0.45;
+}
+
+.hiddenStats {
+  min-height: 79px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-top: 1px solid #d5deea;
+  background:
+    repeating-linear-gradient(
+      -45deg,
+      #f3f6fa,
+      #f3f6fa 8px,
+      #e9eef5 8px,
+      #e9eef5 16px
+    );
+  text-align: center;
+}
+
+.hiddenStats span {
+  color: var(--ink);
+  font-family: "Barlow Condensed", sans-serif;
+  font-size: 18px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+}
+
+.hiddenStats small {
+  margin-top: 3px;
+  color: #67778e;
+  font-size: 11px;
+  font-weight: 700;
 }
 
 .mvpBadge {
@@ -2217,6 +2482,14 @@ const styles = `
   }
 
   @media (max-width: 560px) {
+  .modeOptions {
+  grid-template-columns: 1fr;
+}
+
+.modeHeading {
+  align-items: flex-start;
+  flex-direction: column;
+}
     .powerupsHeading {
     align-items: flex-start;
     flex-direction: column;
