@@ -949,7 +949,8 @@ const teamSpinAvailable =
           </Link>
 
           <nav>
-            <Link href="/">Standings</Link>
+            <a href="/">Maps</a>
+            <Link href="/standings">Standings</Link>
             <Link href="/schedule">Schedule</Link>
             <Link className="active" href="/dynasty">
               Dynasty

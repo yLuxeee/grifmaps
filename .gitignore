@@ -1,4 +1,5 @@
 gwl/node_modules
+.legacy-next-cache/
 gwl/.next
 gwl/.env.local
 node_modules/

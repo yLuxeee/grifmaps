@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-export default function HomePage() {
+export default function StandingsPage() {
   return (
     <>
       <style>{`
@@ -186,7 +186,8 @@ export default function HomePage() {
           </Link>
 
           <nav className="menu">
-            <Link href="/" className="active">Standings</Link>
+            <a href="/">Maps</a>
+            <Link href="/standings" className="active">Standings</Link>
             <Link href="/schedule">Schedule</Link>
             <Link href="/dynasty">Dynasty</Link>
             <Link href="/teams">Teams</Link>
